@@ -1,0 +1,73 @@
+%YAML 1.2
+---
+# Adapted from https://williamr.dev/posts/typst-syntax/
+# http://www.sublimetext.com/docs/3/syntax.html
+name: Lento Lang
+file_extensions:
+  - lt
+  - lento
+scope: source.lento
+variables:
+  non_raw_ident: '[[:alpha:]][_[:alnum:]]*|_[_[:alnum:]]+'
+  identifier: '(?:(?:(?:r\#)?{{non_raw_ident}})\b)'
+  camel_ident: '\b_*[A-Z][a-zA-Z0-9_]*[a-z][a-zA-Z0-9_]*\b'
+  escaped_char: '\\([nrt0\"''\\]|x[0-7]\h|u\{(?:\h_*){1,6}\})'
+  int_suffixes: '[iu](?:1|8|16|32|64|128|size|big)'
+  float_suffixes: 'f(32|64|big)'
+  dec_literal: '[0-9](?:[0-9_])*'
+  float_exponent: '[eE][+-]?[0-9_]*[0-9][0-9_]*'
+contexts:
+  main:
+    - include: statements
+
+  statements:
+    - include: comments
+    - include: strings
+    - include: chars
+    - include: basic-identifiers
+    - include: numbers
+    - include: symbols
+    - include: keywords
+
+    - match: '{{identifier}}'
+    - match: '\.'
+      scope: punctuation.accessor.dot.lento
+    - match: ';'
+      scope: punctuation.terminator.lento
+    - match: '(''(?:{{non_raw_ident}}))\s*(:)'
+      captures:
+        1: entity.name.label.lento
+        2: punctuation.separator.lento
+    - match: '\b({{identifier}})\s*(=)\s*(?=\|)'
+      captures:
+        1: entity.name.function.lento
+        2: keyword.operator.assignment.lento
+    - match: '\b(fn)\s+(?={{identifier}})'
+      captures:
+        1: storage.type.function.lento
+      push: fn-definition
+    - match: '\bstruct\b'
+      scope: storage.type.struct.lento
+      push: struct-identifier
+    - match: '\b(type)\s+({{identifier}})\b'
+      captures:
+        1: keyword.control.lento
+        2: entity.name.type.lento
+      push:
+      - match: '=(?!=)'
+        scope: keyword.operator.assignment.lento
+        push: after-operator
+      - match: '(?=\S)'
+        pop: true
+
+  type:
+    - match: \b(Self|{{int_suffixes}}|{{float_suffixes}}|bool|char|str)\b
+      scope: storage.type.lento
+    - match: uint|int|float|num # union types
+      scope: storage.type.lento
+
+  bool:
+    - match: \b(true|false)\b
+      scope: constant.language.lento
+
+  # More contexts like strings, comments, numbers, keywords, etc. go here...
