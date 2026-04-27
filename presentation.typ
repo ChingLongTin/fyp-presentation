@@ -17,7 +17,7 @@
   header-right: none,
 )
 #codly(languages: (
-  js: (name: "MLscript")
+  js: (name: "mls")
 ))
 
 
@@ -147,11 +147,22 @@ if x is
 
 Even if `x` has a known class shape, we cannot remove matching arms.
 
-#v(3em)
-
-In the previous slide, specialization is done through typing, so we know that
+Specialization is done through typing, so we know that
 `x : B`, but we do not know which specific derived class of `B` is used.
 
+```js
+data class Foo(x, y) extends Bar(x+1, y+1)
+
+if new Foo(1, 2) is
+  Foo(x, y) then ...
+```
+
+Under single inheritance, matching arms runs into problems
+
+```js
+class Foo$1$2 extends Foo
+class Bar$2$3
+```
 
 
 = Overview
@@ -246,21 +257,77 @@ For any Scala Block data, we can recreate the same structure in Staged Block.
   As long as we have the corresponding constructor, we can copy over the structure to the Staged Block.
 ]
 
+// some simple base cases
 #slide[
   We perform structural induction to stage each type of Scala Block.
 
-  ```js Assign(lhs, rhs, rest)```
+  #columns(2)[
+    ```js Value.Lit(lit)```
+
+    ```js
+    ValueLit(lit)
+    ```
+
+    Example: `1` $mapsto$ ```js ValueLit(1)```
+
+    #colbreak()
+
+    #alternatives[
+
+    ```js Symbol(name)```
+    ```js
+    Symbol(name)
+    ```
+
+    Example:
+    - `x` $mapsto$ ```js Symbol("x")```
+    - `C` $mapsto$ ...?
+
+    This is not enough for staging symbols. We'll revisit this case later on.
+    ][
+    ```js Value.Ref(sym)```
+
+    #codly(highlights: (
+      (line: 1, start: 9, fill: blue),
+    )) 
+    ```js
+    let l = sym
+    ValueRef(l)
+    ```
+    
+    Example: `x` $mapsto$ ```js ValueRef(Symbol("x"))```
+    ]
+  ]
   
+  #only("2-")[
+  ```js Select(qual, name)```
+
   #codly(highlights: (
-    (line: 1, start: 9, fill: green),
-    (line: 2, start: 9, fill: green),
-    (line: 3, start: 9, fill: green),
+    (line: 1, start: 9, fill: blue),
+    (line: 2, start: 9, fill: blue),
   ))
   ```js
-  let l = lhs
-  let r = rhs
-  let b = rest
-  Assign(l, r, b)
+  let q = qual
+  let n = name
+  Select(q, n)
+  ```
+  
+  Example: `x.p` $mapsto$ ```js Select(ValueRef(Symbol("x")), Symbol("p"))```
+  ]
+]
+
+// 
+#slide[
+  ```js Tuple([x0, x1, ...])```
+
+  #codly(skips: ((3, 1), ), highlights: (
+    (line: 1, start: 10, fill: blue),
+    (line: 2, start: 10, fill: blue),
+  ))
+  ```js
+  let s0 = x0
+  let s1 = x1
+  Tuple([x0, x1, ...])
   ```
 ]
 
@@ -273,16 +340,22 @@ For any Scala Block data, we can recreate the same structure in Staged Block.
 
     Add redirection within current stage to allow access for next module
       
-  - We want Symbols for the same object in the previous stage to be unique in the current stage across functions
+  - We want Symbols for the same object in the previous stage to be unique in the current stage across functions and compilations
+
+    For local functions, we can maintain a map during staging to reuse a staged symbol.
     
-    Cache and use first instance of a symbol.
-  
+    For class and module symbols, we need to cache and use first instance of a symbol within the staged code. 
 ]
 
 
 #place(horizon + center, $mapsto$)
 
-== Shape propagation
+== Shape Propagation
+
+=== Shape Definitions
+
+$ s ::= underline(iota) | bold("dyn") | underline([overline(s)]) | underline(C)(overline(n\:s)) | bot | s union s $
+
 for the per-block thing, saving the function calls until specialization?
 
 `<shape definitions>`, tracking shapes
@@ -298,18 +371,45 @@ how each individual function is called and specialized, combined with the cachin
 
 === Entry functions
 
-Those act as points that the user can call the staged module with. Other specialized functions are there too but they're mine. You can't touch them.
+// What happens when other staged modules want to access these private functions?
+Those act as points that the user can call the staged module with. Other specialized functions are there too but they're mine. You can't touch them. I'm not even going to export them for you to access.
 
 
 
 == Printing Staged Block
 
-After all the specialized functions are completed, we need to write the functions to a new file.
+#slide[
+  After all the specialized functions are completed, we need to write the functions to a new file.
 
+  // FIXME: use the real example of power instead of an arbitrary module?
+  ```js
+  staged module M with
+    val funCache = new Map([
+      ["f1", ...],
+      ["f2", ...],
+      ["g1", ...]
+    ])
+  ```
+
+  ```
+  module M with
+    fun f1(x, y) = ...
+    fun f2() = ...
+    fun g1() = ...
+  ```
+]
+
+#slide[
+  This is a similar process to staging, but done in reverse.
+
+  As before, we need extra care when handling symbols.
+
+
+]
 
 = Testing
 
-relevant?
+relevant? there's nothing really notable compared to ordinary mlscript development (diff/compile tests are already features within it)
 
 
 = Benchmarking
