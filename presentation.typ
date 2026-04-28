@@ -3,6 +3,7 @@
 // 1.3.1 fixes the nested highlighting, follow https://github.com/typst/packages to install a local version
 #import "@local/codly:1.3.1": *
 #import "@preview/codly-languages:0.1.10": *
+
 #show: styling
 #show: codly-init.with()
 
@@ -16,17 +17,146 @@
   ),
   header-right: none,
 )
+
 #codly(languages: (
   js: (name: "mls")
 ))
 
+#let bib = bytes(
+  "@article{glenstrup2005termination,
+  title     = {Termination analysis and specialization-point insertion in offline partial evaluation},
+  author    = {Glenstrup, Arne John and Jones, Neil D},
+  journal   = {ACM Transactions on Programming Languages and Systems (TOPLAS)},
+  volume    = {27},
+  number    = {6},
+  pages     = {1147--1215},
+  year      = {2005},
+  publisher = {ACM New York, NY, USA},
+  url       = {https://dl.acm.org/doi/pdf/10.1145/1108970.1108973},
+  comment   = {Mentiones techniques to prove the termination of the generation process of partial evaluation}
+}
+@inproceedings{helsen2000fragmental,
+  title       = {Fragmental specialization},
+  author              = {Helsen, Simon and Thiemann, Peter},
+  booktitle        = {International Workshop on Semantics, Applications, and Implementation of Program Generation},
+  pages                = {51--71},
+  year                  = {2000},
+  organization  = {Springer},
+  comment            = {Specialization accross compilation modules, may be useful for the Implementation section}
+}
+@misc{bruzzone2026metamonomorphizingspecializations,
+  title   = {Meta-Monomorphizing Specializations}, 
+  author={Federico Bruzzone and Walter Cazzola},
+  year={2026},
+  eprint={2602.12973},
+  archivePrefix={arXiv},
+  primaryClass={cs.PL},
+  url={https://arxiv.org/abs/2602.12973}, 
+}
+@phdthesis{helsen2002region,
+  title   = {Region-Based Program Specialization},
+  author  = {Helsen, Simon},
+  year    = {2002},
+  school  = {Verlag nicht ermittelbar},
+  comment = {Binding Time Analysis with polyvariance, an extension of Fragmental Compilation}
+}
+@article{helsen2004polymorphic,
+  title     = {Polymorphic specialization for ML},
+  author    = {Helsen, Simon and Thiemann, Peter},
+  journal   = {ACM Transactions on Programming Languages and Systems (TOPLAS)},
+  volume    = {26},
+  number    = {4},
+  pages     = {652--701},
+  year      = {2004},
+  publisher = {ACM New York, NY, USA},
+  comment   = {Not particularly relevant, +ML +specialization -region valculus}
+}
+@inproceedings{kiselyov2017stream,
+  title     = {Stream fusion, to completeness},
+  author    = {Kiselyov, Oleg and Biboudis, Aggelos and Palladinos, Nick and Smaragdakis, Yannis},
+  booktitle = {Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages},
+  pages     = {285--299},
+  year      = {2017},
+  comment   = {Strymonas library for potential porting, +staging +ZCA}
+}
+@inproceedings{lionel2024diff,
+  title     = {Diff-based interactive compiler debugging and testing},
+  author    = {Luyu Cheng, Lionel Parreaux},
+  booktitle = {Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages},
+  pages     = {285--299},
+  year      = {2017},
+  comment   = {Strymonas library for potential porting, +staging +ZCA}
+}
+@article{lutze2025simple,
+  title     = {The Simple Essence of Monomorphization},
+  author    = {Lutze, Matthew and Schuster, Philipp and Brachth{\"a}user, Jonathan Immanuel},
+  journal   = {Proceedings of the ACM on Programming Languages},
+  volume    = {9},
+  number    = {OOPSLA1},
+  pages     = {1015--1041},
+  year      = {2025},
+  publisher = {ACM New York, NY, USA}
+}
+@inproceedings{parreaux2017quoted,
+  title     = {Quoted staged rewriting: a practical approach to library-defined optimizations},
+  author    = {Parreaux, Lionel and Shaikhha, Amir and Koch, Christoph E},
+  booktitle = {Proceedings of the 16th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences},
+  pages     = {131--145},
+  year      = {2017}
+}
+@inproceedings{parreaux2017squid,
+  title     = {Squid: type-safe, hygienic, and reusable quasiquotes},
+  author    = {Parreaux, Lionel and Shaikhha, Amir and Koch, Christoph E},
+  booktitle = {Proceedings of the 8th ACM SIGPLAN International Symposium on Scala},
+  pages     = {56--66},
+  year      = {2017}
+}
+@inproceedings{parreaux2024seamless,
+  author    = {Gao, Cunyuan and Parreaux, Lionel},
+  title     = {Seamless Scope-Safe Metaprogramming through Polymorphic Subtype Inference (Short Paper)},
+  year      = {2024},
+  isbn      = {9798400712111},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/3689484.3690733},
+  doi       = {10.1145/3689484.3690733},
+  abstract  = {Practical metaprogramming applications often involve manipulating open code fragments, which is easy to get wrong in the absence of static verification that all variable occurrences remain correctly bound. Many approaches have been proposed to verify the type- and scope-safety of metaprograms, but these approaches are either incomplete or cumbersome, imposing heavy type annotation or proof obligation burdens on metaprogrammers. In this short paper, we propose a new type system to statically keep track of the context requirements of code fragments. Our system uses a novel combination of Boolean-algebraic subtyping and first-class polymorphic type inference techniques to alleviate the annotation burden. The former provides the ability to encode scope requirements as unions of types and the latter allows these types to be locally quantified through a flexible form of polymorphic subtyping. We formalize this type system and demonstrate its implementation in the nascent MLscript functional and object-oriented programming language.},
+  booktitle = {Proceedings of the 23rd ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences},
+  pages     = {121–127},
+  numpages  = {7},
+  keywords  = {First-Class Polymorphism, Metaprogramming, Type Inference},
+  location  = {Pasadena, CA, USA},
+  series    = {GPCE '24}
+}
+@inproceedings{swadi2006monadic,
+  title     = {A monadic approach for avoiding code duplication when staging memoized functions},
+  author    = {Swadi, Kedar and Taha, Walid and Kiselyov, Oleg and Pasalic, Emir},
+  booktitle = {Proceedings of the 2006 ACM SIGPLAN symposium on Partial evaluation and semantics-based program manipulation},
+  pages     = {160--169},
+  year      = {2006}
+}
+@inproceedings{taha2004gentle,
+  title        = {A gentle introduction to multi-stage programming},
+  author       = {Taha, Walid},
+  booktitle    = {Domain-Specific Program Generation: International Seminar, Dagstuhl Castle, Germany, March 23-28, 2003. Revised Papers},
+  pages        = {30--50},
+  year         = {2004},
+  organization = {Springer}
+}",
+)
 
-#title-slide()
+// #show: themes.simple.simple-theme.with(
+//   aspect-ratio: "16-9",
+//   config-common(show-bibliography-as-footnote: bibliography(bib)),
+// )
+
+
+// #title-slide()
 
 = Motivation
 
 == Multi-Stage Programming
-Well-known optimization technique (ref here)
+Well-known optimization technique // (@taha2004gentle)
 
 #codly(highlights: (
   (line: 2, start: 12, end: 12, fill: green),
@@ -49,9 +179,8 @@ fun power2 = .! .<(x => .~(power(2, .<x>.)))>.
 In here, green to annotates code to be executed in the next stage, and grey executed in the current stage.
 
 
-
 #slide[#local(number-format: none, lang-format: (_, _, _) => [], [
-  Rule for ```js .!```: evaluate until we turn the whole code fragment into the next stage, then move it to the current stage.
+  Rule for ```js .!```: evaluate until we the whole code fragment is in the next stage, then move it to the current stage.
   #codly(highlights: (
     (line: 1, start: 4, end: 4, fill: green),
     (line: 1, start: 4, end: 4, fill: gray),
@@ -61,6 +190,8 @@ In here, green to annotates code to be executed in the next stage, and grey exec
   ```js
   .! x = .! x = x
   ```
+
+  During evaluation, we able to pre-compute certain parts of the code, reducing runtime.
 
 ])
 ]
@@ -154,13 +285,13 @@ Specialization is done through typing, so we know that
 data class Foo(x, y) extends Bar(x+1, y+1)
 
 if new Foo(1, 2) is
-  Foo(x, y) then ...
+  Bar(x, y) then ...
 ```
 
-Under single inheritance, matching arms runs into problems
+Under single inheritance, matching arms runs into problems.
 
 ```js
-class Foo$1$2 extends Foo
+class Foo$1$2 extends Bar
 class Bar$2$3
 ```
 
@@ -169,7 +300,9 @@ class Bar$2$3
 
 == MLscript Compiler
 
-The #emoji.sparkles Lowering #emoji.sparkles stage (boo i don't care that #emoji.sparkles has GenAI connotations)
+Parser => Lexer => ... => #strong([Lowering]) => Codegen
+
+The Lowering pass
 
 == Lowering Pass
 
@@ -177,25 +310,36 @@ Term => Scala Block
 
 We do instrumentation from Scala Block => Scala Block.
 
+== instrumentation
+
+== Shape
+
+We focus on tracking the shape of the values defined in Block, paths and results.
+
+$ s ::= underline(iota) | bold("dyn") | underline([overline(s)]) | underline(C)(overline(n\:s)) | bot | s union s $
+
+
+
 
 = Implementation
 
 #slide[
-```js
-staged module A with
-  fun pow(x, n) = if n is
-    0 then 1
-    else x * pow(x, n-1)
-  fun sq(x) = pow(x, 2)
-```
+  === Example 1
 
-// check in with our result and see if it works
-#codly(skips:((1,4),))
-```js
-  fun sq(x) = x * x * 1
-```
+  ```js
+  staged module A with
+    fun pow(@dynamic x, n) = if n is
+      0 then 1
+      else x * pow(x, n-1)
+    fun sq(x) = pow(x, 2)
+  ```
 
-This example touches on shape tracking, match arm removal, and nested specialization.
+  #codly(skips:((1,4),))
+  ```js
+    fun sq(x) = x * x * 1
+  ```
+
+  This example touches on shape tracking, match arm removal, and nested specialization.
 ]
 
 == Staging
@@ -215,7 +359,7 @@ class Block with
     Assign(lhs, rhs, rest)
 ```
 
-For any Scala Block data, we can recreate the same structure in Staged Block.
+For any Scala Block data, we can recreate the same structure with #strong([Staged Block]).
 ]
 
 #slide[
@@ -316,7 +460,6 @@ For any Scala Block data, we can recreate the same structure in Staged Block.
   ]
 ]
 
-// 
 #slide[
   ```js Tuple([x0, x1, ...])```
 
@@ -329,38 +472,66 @@ For any Scala Block data, we can recreate the same structure in Staged Block.
   let s1 = x1
   Tuple([x0, x1, ...])
   ```
+
+  The other Scala Block cases are similar, staging the parameters of the Scala Block by induction and recreating the corresponding Staged Block counterpart.
 ]
 
 #slide[
   === Staging Symbols
 
+  #alternatives[
   - We need more information about the Symbol in the original stage (particularly, tracking the previous stage values)
 
-    Add extra field to point to current stage's value
-
     Add redirection within current stage to allow access for next module
-      
-  - We want Symbols for the same object in the previous stage to be unique in the current stage across functions and compilations
+
+    // we might use import magic to import the module directly instead of using the module itself
+    ```js
+    staged class A with
+      fun f() = M.f()
+      val redirect_M = M
+    ```
+  ][
+  - Uniqueness of Symbols
+    
+    We want Symbols for the same object in the previous stage to be unique in the current stage across functions and compilations
 
     For local functions, we can maintain a map during staging to reuse a staged symbol.
     
-    For class and module symbols, we need to cache and use first instance of a symbol within the staged code. 
+    For class and module symbols, we need to cache and use first instance of a symbol within the staged code.
+  ]
 ]
-
-
-#place(horizon + center, $mapsto$)
 
 == Shape Propagation
 
-=== Shape Definitions
-
-$ s ::= underline(iota) | bold("dyn") | underline([overline(s)]) | underline(C)(overline(n\:s)) | bot | s union s $
-
 for the per-block thing, saving the function calls until specialization?
 
-`<shape definitions>`, tracking shapes
+tracking shapes for Path and results
 
 refinement by pattern matching / selection
+
+
+// maybe we can introduce how each block is handled here
+#slide[
+  Return/ValueRef: recall shape from current context
+
+  Instantiate/Tuple: construct a new shape from current context
+]
+
+#slide[
+  (Dyn)Select/Match: refinement + remove dead branches
+
+  talk about tracking classes here, which addresses the class staging problems mentioned at the start.
+]
+
+#slide[
+  Assign/Scoped/ValDefn: add the shape to ctx
+]
+
+#slide[
+  Call: oh boy... specialize if possible, then re-construct the shape
+
+  - non-staged: evaluate if all static, otherwise
+]
 
 function calls: find the correct functions, for both staged and non-staged functions
 
@@ -403,8 +574,6 @@ Those act as points that the user can call the staged module with. Other special
   This is a similar process to staging, but done in reverse.
 
   As before, we need extra care when handling symbols.
-
-
 ]
 
 = Testing
@@ -417,3 +586,11 @@ relevant? there's nothing really notable compared to ordinary mlscript developme
 == Model-View-Projection transformation
 
 basically we're pretty good at partially evaluating matrices ^w^.
+
+Time: about 2x (from 2s to 1s, eh...)
+
+Space: don't worry about it
+
+
+
+// #magic.bibliography(title: none)
