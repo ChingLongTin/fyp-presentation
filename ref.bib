@@ -1,0 +1,127 @@
+@article{glenstrup2005termination,
+  title     = {Termination analysis and specialization-point insertion in offline partial evaluation},
+  author    = {Glenstrup, Arne John and Jones, Neil D},
+  journal   = {ACM Transactions on Programming Languages and Systems (TOPLAS)},
+  volume    = {27},
+  number    = {6},
+  pages     = {1147--1215},
+  year      = {2005},
+  publisher = {ACM New York, NY, USA},
+  url       = {https://dl.acm.org/doi/pdf/10.1145/1108970.1108973},
+  comment   = {Mentiones techniques to prove the termination of the generation process of partial evaluation}
+}
+@inproceedings{helsen2000fragmental,
+  title       = {Fragmental specialization},
+  author              = {Helsen, Simon and Thiemann, Peter},
+  booktitle        = {International Workshop on Semantics, Applications, and Implementation of Program Generation},
+  pages                = {51--71},
+  year                  = {2000},
+  organization  = {Springer},
+  comment            = {Specialization accross compilation modules, may be useful for the Implementation section}
+}
+@misc{bruzzone2026metamonomorphizingspecializations,
+  title   = {Meta-Monomorphizing Specializations}, 
+  author={Federico Bruzzone and Walter Cazzola},
+  year={2026},
+  eprint={2602.12973},
+  archivePrefix={arXiv},
+  primaryClass={cs.PL},
+  url={https://arxiv.org/abs/2602.12973}, 
+}
+@phdthesis{helsen2002region,
+  title   = {Region-Based Program Specialization},
+  author  = {Helsen, Simon},
+  year    = {2002},
+  school  = {Verlag nicht ermittelbar},
+  comment = {Binding Time Analysis with polyvariance, an extension of Fragmental Compilation}
+}
+@article{helsen2004polymorphic,
+  title     = {Polymorphic specialization for ML},
+  author    = {Helsen, Simon and Thiemann, Peter},
+  journal   = {ACM Transactions on Programming Languages and Systems (TOPLAS)},
+  volume    = {26},
+  number    = {4},
+  pages     = {652--701},
+  year      = {2004},
+  publisher = {ACM New York, NY, USA},
+  comment   = {Not particularly relevant, +ML +specialization -region valculus}
+}
+@inproceedings{kiselyov2017stream,
+  title     = {Stream fusion, to completeness},
+  author    = {Kiselyov, Oleg and Biboudis, Aggelos and Palladinos, Nick and Smaragdakis, Yannis},
+  booktitle = {Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages},
+  pages     = {285--299},
+  year      = {2017},
+  comment   = {Strymonas library for potential porting, +staging +ZCA}
+}
+@inproceedings{lionel2024diff,
+  title     = {Diff-based interactive compiler debugging and testing},
+  author    = {Luyu Cheng, Lionel Parreaux},
+  booktitle = {Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages},
+  pages     = {285--299},
+  year      = {2017},
+  comment   = {Strymonas library for potential porting, +staging +ZCA}
+}
+@article{lutze2025simple,
+  title     = {The Simple Essence of Monomorphization},
+  author    = {Lutze, Matthew and Schuster, Philipp and Brachth{\"a}user, Jonathan Immanuel},
+  journal   = {Proceedings of the ACM on Programming Languages},
+  volume    = {9},
+  number    = {OOPSLA1},
+  pages     = {1015--1041},
+  year      = {2025},
+  publisher = {ACM New York, NY, USA}
+}
+@inproceedings{parreaux2017quoted,
+  title     = {Quoted staged rewriting: a practical approach to library-defined optimizations},
+  author    = {Parreaux, Lionel and Shaikhha, Amir and Koch, Christoph E},
+  booktitle = {Proceedings of the 16th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences},
+  pages     = {131--145},
+  year      = {2017}
+}
+@inproceedings{parreaux2017squid,
+  title     = {Squid: type-safe, hygienic, and reusable quasiquotes},
+  author    = {Parreaux, Lionel and Shaikhha, Amir and Koch, Christoph E},
+  booktitle = {Proceedings of the 8th ACM SIGPLAN International Symposium on Scala},
+  pages     = {56--66},
+  year      = {2017}
+}
+@inproceedings{parreaux2024seamless,
+  author    = {Gao, Cunyuan and Parreaux, Lionel},
+  title     = {Seamless Scope-Safe Metaprogramming through Polymorphic Subtype Inference (Short Paper)},
+  year      = {2024},
+  isbn      = {9798400712111},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/3689484.3690733},
+  doi       = {10.1145/3689484.3690733},
+  abstract  = {Practical metaprogramming applications often involve manipulating open code fragments, which is easy to get wrong in the absence of static verification that all variable occurrences remain correctly bound. Many approaches have been proposed to verify the type- and scope-safety of metaprograms, but these approaches are either incomplete or cumbersome, imposing heavy type annotation or proof obligation burdens on metaprogrammers. In this short paper, we propose a new type system to statically keep track of the context requirements of code fragments. Our system uses a novel combination of Boolean-algebraic subtyping and first-class polymorphic type inference techniques to alleviate the annotation burden. The former provides the ability to encode scope requirements as unions of types and the latter allows these types to be locally quantified through a flexible form of polymorphic subtyping. We formalize this type system and demonstrate its implementation in the nascent MLscript functional and object-oriented programming language.},
+  booktitle = {Proceedings of the 23rd ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences},
+  pages     = {121–127},
+  numpages  = {7},
+  keywords  = {First-Class Polymorphism, Metaprogramming, Type Inference},
+  location  = {Pasadena, CA, USA},
+  series    = {GPCE '24}
+}
+@inproceedings{swadi2006monadic,
+  title     = {A monadic approach for avoiding code duplication when staging memoized functions},
+  author    = {Swadi, Kedar and Taha, Walid and Kiselyov, Oleg and Pasalic, Emir},
+  booktitle = {Proceedings of the 2006 ACM SIGPLAN symposium on Partial evaluation and semantics-based program manipulation},
+  pages     = {160--169},
+  year      = {2006}
+}
+@inproceedings{taha2004gentle,
+  title        = {A gentle introduction to multi-stage programming},
+  author       = {Taha, Walid},
+  booktitle    = {Domain-Specific Program Generation: International Seminar, Dagstuhl Castle, Germany, March 23-28, 2003. Revised Papers},
+  pages        = {30--50},
+  year         = {2004},
+  organization = {Springer}
+}
+@inproceedings{shali2011hybrid,
+  title={Hybrid partial evaluation},
+  author={Shali, Amin and Cook, William R},
+  booktitle={Proceedings of the 2011 ACM international conference on Object oriented programming systems languages and applications},
+  pages={375--390},
+  year={2011}
+}
