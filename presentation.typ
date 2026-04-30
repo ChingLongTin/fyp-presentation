@@ -9,7 +9,7 @@
 
 #show: university-theme.with(
   config-info(
-    title: [Implementation and experimentation with program specialization and compilation techniques for writing high-performance programs],
+    title: [Implementation and experimentation with Dynamic Staging],
     subtitle: [LP2],
     // lecture-number: 1,
     author: [CHING Long Tin, YEUNG Sin Chun],
@@ -151,9 +151,48 @@
 // )
 
 
-// #title-slide()
+#title-slide()
+
+#hide()
 
 = Motivation
+
+== Compile-Time vs. Run-Time Work
+
+#slide[
+  Programmers often write code in a clear, abstract style, even when parts of it could be computed during compilation.
+
+  #columns(2)[
+    *Original program*
+    ```js
+    fun dot(xs, ys) =
+      if xs is
+        Nil then 0
+        Cons(x, xt) and ys is
+          Cons(y, yt) then
+            x * y + dot(xt, yt)
+
+    fun dotWith3(v) =
+      dot([1, 0, 2], v)
+    ```
+
+    #colbreak()
+
+    *Residual program* (after specialising on `[1, 0, 2]`)
+    ```js
+    fun dotWith3(v) = v(0) + 2 * v(2)
+    ```
+  ]
+
+  The recursion, the pattern matches, the multiplication by `0` — all known at compile time. The residual program contains only the work that genuinely depends on the runtime input `v`.
+
+  #v(0.5em)
+  #block(
+    fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+    width: 100%,
+    [*Goal:* let the programmer keep the abstract version, and have the compiler peel away the static layer automatically.]
+  )
+]
 
 == Multi-Stage Programming
 Well-known optimization technique // (@taha2004gentle)
@@ -300,15 +339,12 @@ class Bar$2$3
 
 == MLscript Compiler
 
-Parser => Lexer => ... => #strong([Lowering]) => Codegen
-
-The Lowering pass
+#align(center)[#image("pipeline-overview.svg", width: 95%)]
 
 == Lowering Pass
 
-Term => Scala Block
-
-We do instrumentation from Scala Block => Scala Block.
+We do instrumentation from Scala Block to Scala Block.
+#align(center)[#image("pipeline-lowering.svg", width: 100%)]
 
 == instrumentation
 
@@ -316,15 +352,16 @@ We do instrumentation from Scala Block => Scala Block.
 
 We focus on tracking the shape of the values defined in Block, paths and results.
 
-$ s ::= underline(iota) | bold("dyn") | underline([overline(s)]) | underline(C)(overline(n\:s)) | bot | s union s $
+$ s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot | s union s $
 
 
 
 
 = Implementation
 
+== What's this for?
+
 #slide[
-  === Example 1
 
   ```js
   staged module A with
@@ -503,49 +540,424 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
 
 == Shape Propagation
 
-for the per-block thing, saving the function calls until specialization?
+#let shape(s) = box[⟦#raw(s)⟧]
 
-tracking shapes for Path and results
-
-refinement by pattern matching / selection
-
-
-// maybe we can introduce how each block is handled here
 #slide[
-  Return/ValueRef: recall shape from current context
+  A *Shape* captures what we statically know about a value at compile time.
 
-  Instantiate/Tuple: construct a new shape from current context
+  $ s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot | s union s $
+
+  We write #shape("s") to denote the shape of an expression, distinguishing it from actual values.
+
+  #v(0.3em)
+  ```js
+  fun f(p, cond) =
+    let a = 42                    // 42
+    let b = C(p, 2)               // C(dyn, 2)
+    let c = if cond
+      then [1, 2, 3] else C(1,2)  // {[1,2,3], C(1,2)}
+    let d = if b is C then 0 else 1 // 0
+  ```
+
+  Shapes are tracked in a context $Gamma$ mapping paths to their *ShapeSet*.
 ]
 
 #slide[
-  (Dyn)Select/Match: refinement + remove dead branches
+  Before the formal rules, let's trace propagation on this module:
 
-  talk about tracking classes here, which addresses the class staging problems mentioned at the start.
+  ```js
+  class C(val n)
+  staged module If2 with
+    fun f(x) =
+      let y
+      if x is C then  y = x.n
+      else y = 0
+      y + 1
+    fun test()     = f(C(2))
+    fun test2(dyn) = f(C(dyn))
+    fun test3()    = f(0)
+  ```
+]
+
+#let ctxbox(body) = block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.6em, radius: 4pt,
+  width: 100%, [#text(size: 0.8em, weight: "bold")[ctx] \ #body]
+)
+
+#slide[
+  #columns(2)[
+    === Trace 1: `test() = f(C(2))`
+
+    Specialise `f` with `x` ↦ #shape("C(n: 2)").
+
+    #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
+    #only("3")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
+    #only("4")[#codly(highlights: ((line: 4, start: 5, fill: yellow),))]
+    #only("5")[#codly(highlights: ((line: 7, start: 3, fill: yellow),))]
+    ```js
+    fun f(x) =
+      let y
+      if x is C then
+        y = x.n
+      else
+        y = 0
+      y + 1
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      `x` ↦ #shape("C(n: 2)")
+      #only("2-3")[\ `y` ↦ #shape("⊥")]
+      #only("4-")[\ `y` ↦ #shape("2")]
+    ]
+
+    #pause
+    + `let y`: extend ctx with `y` ↦ #shape("⊥")
+    #pause
+    + `if x is C`: `filter(`#shape("C(n: 2)")`, C)` = #shape("C(n: 2)") so `then` is viable; `rest` = #shape("⊥") so `else` is dead
+    #pause
+    + In `then`: `sop(x.n)` = `sel(`#shape("C(n: 2)")`, n)` = #shape("2"), so `y` ↦ #shape("2")
+    #pause
+    + `y + 1` folds to #shape("3"), then `Return 3`
+
+    Cached as `f_C_Lit2`; body folds entirely to the constant `3`.
+  ]
 ]
 
 #slide[
-  Assign/Scoped/ValDefn: add the shape to ctx
+  #columns(2)[
+    === Trace 2: `test2(dyn) = f(C(dyn))`
+
+    Argument shape: #shape("C(n: dyn)"). Specialise `f` with `x` ↦ #shape("C(n: dyn)").
+
+    #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
+    #only("3")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
+    #only("4")[#codly(highlights: ((line: 4, start: 5, fill: yellow),))]
+    #only("5")[#codly(highlights: ((line: 7, start: 3, fill: yellow),))]
+    ```js
+    fun f(x) =
+      let y
+      if x is C then
+        y = x.n
+      else
+        y = 0
+      y + 1
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      `x` ↦ #shape("C(n: dyn)")
+      #only("2-3")[\ `y` ↦ #shape("⊥")]
+      #only("4-")[\ `y` ↦ #shape("dyn")]
+    ]
+
+    #pause
+    + `let y`: `y` ↦ #shape("⊥")
+    #pause
+    + `if x is C`: `filter(`#shape("C(n: dyn)")`, C)` = #shape("C(n: dyn)") so `then` is viable; `rest` = #shape("⊥") so `else` is dead
+    #pause
+    + In `then`: `sop(x.n)` = `sel(`#shape("C(n: dyn)")`, n)` = #shape("dyn")
+    #pause
+    + `y + 1`: cannot fold (#shape("dyn") `+ 1`); emit code, result #shape("dyn")
+
+    Cached as `f_C_Dyn`; body keeps the `y = x.n` assignment.
+  ]
 ]
 
 #slide[
-  Call: oh boy... specialize if possible, then re-construct the shape
+  #columns(2)[
+    === Trace 3: `test3() = f(0)`
 
-  - non-staged: evaluate if all static, otherwise
+    Argument shape: #shape("0") (literal). Specialise `f` with `x` ↦ #shape("0").
+
+    #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
+    #only("3")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
+    #only("4")[#codly(highlights: ((line: 6, start: 5, fill: yellow),))]
+    #only("5")[#codly(highlights: ((line: 7, start: 3, fill: yellow),))]
+    ```js
+    fun f(x) =
+      let y
+      if x is C then
+        y = x.n
+      else
+        y = 0
+      y + 1
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      `x` ↦ #shape("0")
+      #only("2-3")[\ `y` ↦ #shape("⊥")]
+      #only("4-")[\ `y` ↦ #shape("0")]
+    ]
+
+    #pause
+    + `let y`: `y` ↦ #shape("⊥")
+    #pause
+    + `if x is C`: `filter(`#shape("0")`, C)` = #shape("⊥") so `then` is dead; `rest(`#shape("0")`, C)` = #shape("0") so `else` is viable
+    #pause
+    + In `else`: `y` ↦ #shape("0")
+    #pause
+    + `y + 1` folds to #shape("1"), then `Return 1`
+
+    Cached as `f_Lit0`.
+  ]
 ]
 
-function calls: find the correct functions, for both staged and non-staged functions
+#slide[
+  === Resulting Cache
 
+  After all three calls, the staged module contains:
 
+  ```js
+  module If2 with
+    fun f_C_Dyn(x) =
+      let y
+      y = x.n
+      y + 1                 // dyn case: code is kept
+    fun f_C_Lit2(x) = 3     // fully specialised
+    fun f_Lit0()    = 1     // fully specialised
+    fun test()      = 3
+    fun test2(dyn)  = f_C_Dyn(C$If2(dyn))
+    fun test3()     = 1
+  ```
+]
 
-== Specialization
-how each individual function is called and specialized, combined with the caching
+#slide[
+  === Dynamic Dispatching
+  When a method is called on a value with a *union shape*, we split by class and dispatch separately.
 
-=== Entry functions
+  #local(lang-format: (_, _, _) => [],
+  ```js
+  staged class B1(val y) with  fun call(x) = x + 2 + y
+  staged class B2(val y) with  fun call(x) = x + y
+  staged module M with
+    fun twice(f, x) = f.call(f.call(x))
+    fun pick(x, y, b) = if b then x else y
+    fun f(b) =
+      let m = pick(new B1(2), new B2(3), b)
+      twice(m, 5)
+  ```
+  )
+]
 
-// What happens when other staged modules want to access these private functions?
-Those act as points that the user can call the staged module with. Other specialized functions are there too but they're mine. You can't touch them. I'm not even going to export them for you to access.
+#slide[
+  #columns(2)[
+    === Trace A: `f(dyn)`
 
+    Specialise `f` with `b` ↦ #shape("dyn").
 
+    #only("2-")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
+    ```js
+    fun f(b) =
+      let m = pick(new B1(2), new B2(3), b)
+      twice(m, 5)
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      `b` ↦ #shape("dyn")
+      #only("2-")[\ `m` ↦ #shape("⊥")]
+    ]
+
+    #pause
+    + `let m`: extend ctx with `m` ↦ #shape("⊥")
+    #pause
+    + Call `pick(new B1(2), new B2(3), b)`: argument shapes are #shape("B1(2)"), #shape("B2(3)"), #shape("dyn"). Recurse into `pick` with a fresh ctx $arrow$ *go to Trace B*
+  ]
+]
+
+#slide[
+  #columns(2)[
+    === Trace B: `pick(B1(2), B2(3), dyn)`
+
+    #only("2")[#codly(highlights: ((line: 1, start: 5, end: 17, fill: yellow),))]
+    #only("3")[#codly(highlights: ((line: 2, start: 6, fill: yellow),))]
+    #only("4")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
+    ```js
+    fun pick(x, y, b) =
+      if b then x
+      else y
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      #text(size: 0.9em, style: "italic")[fresh ctx for `pick`] \
+      `x` ↦ #shape("B1(2)") \
+      `y` ↦ #shape("B2(3)") \
+      `b` ↦ #shape("dyn")
+    ]
+
+    #pause
+    + `if b`: `b` is #shape("dyn"), so both branches viable
+    #pause
+    + `then` arm returns `x`, shape = #shape("B1(2)")
+    #pause
+    + `else` arm returns `y`, shape = #shape("B2(3)")
+    #pause
+    + Result shape: #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧]. Cached as `pick1`. Return to Trace A.
+  ]
+]
+
+#slide[
+  #columns(2)[
+    === Trace A (continued): back in `f`
+
+    #only("1-2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
+    #only("3-")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
+    ```js
+    fun f(b) =
+      let m = pick(new B1(2), new B2(3), b)
+      twice(m, 5)
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      `b` ↦ #shape("dyn") \
+      `m` ↦ #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧]
+    ]
+
+    #pause
+    + Bind `m` to `pick`'s returned shape = #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧]
+    #pause
+    + `twice(m, 5)`: `m` has *union shape* $arrow$ *go to Trace C* and specialise as `twice1`
+  ]
+]
+
+#slide[
+  #columns(2)[
+    === Trace C: `twice({B1(2), B2(3)}, 5)`
+
+    #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
+    #only("3")[#codly(highlights: ((line: 3, start: 9, end: 18, fill: yellow),))]
+    ```js
+    fun twice(f, x) =
+      let tmp
+      tmp = f.call(x)
+      f.call(tmp)
+    ```
+
+    Recall:
+    ```js
+    class B1(y) with 
+      fun call(x) = x + 2 + y
+    class B2(y) with 
+      fun call(x) = x + y
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      `f` ↦ #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧] \
+      `x` ↦ #shape("5")
+      #only("2")[\ `tmp` ↦ #shape("⊥")]
+      #only("3-")[\ `tmp` ↦ #shape("{9, 8}")]
+    ]
+
+    #pause
+    + `let tmp`: extend ctx with `tmp` ↦ #shape("⊥")
+    #pause
+    + `f.call(x)` on union $arrow$ *split by class*:
+      - `f` = #shape("B1(2)"): cache `f.call1()` $arrow$ #shape("9")
+      - `f` = #shape("B2(3)"): cache `f.call1()` $arrow$ #shape("8")
+  ]
+]
+
+#slide[
+  #columns(2)[
+    === Trace C (continued): second call
+
+    #codly(highlights: ((line: 3, start: 3, end: 7, fill: yellow),))
+    ```js
+    fun twice(f, x) =
+      let tmp
+      tmp = f.call(x)
+      f.call(tmp)
+    ```
+
+    Recall:
+    ```js
+    class B1(y) with fun call(x) = x + 2 + y
+    class B2(y) with fun call(x) = x + y
+    ```
+
+    #colbreak()
+
+    #set text(size: 0.85em)
+    #ctxbox[
+      `f` ↦ #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧] \
+      `x` ↦ #shape("5") \
+      `tmp` ↦ #shape("{9, 8}")
+    ]
+
+    #set enum(start: 3)
+    + `f.call(tmp)` with `tmp` in #shape("{9, 8}") (now #shape("dyn")): split again, body kept as code
+      - `f` = #shape("B1"): cache `f.call2(x) = x + 2 + 2`
+      - `f` = #shape("B2"): cache `f.call2(x) = x + 3`
+  ]
+]
+
+#slide[
+  === Resulting Cache
+
+  After propagation, `M` and the staged classes contain:
+
+  #set text(size: 0.78em)
+  #columns(2)[
+    ```js
+    module M with
+      fun f(b) =
+        let m, tmp1, tmp2
+        tmp1 = new B1(2)
+        tmp2 = new B2(3)
+        m = pick1(tmp1, tmp2, b)
+        twice1(m)
+      fun pick1(x, y, b) =
+        if b then new B1(2) else new B2(3)
+    ```
+
+    #colbreak()
+
+    ```
+      fun twice1(f) =
+        let tmp
+        if f is
+          B1 then tmp = f.call1()
+          B2 then tmp = f.call1()
+        if f is
+          B1 then f.call2(tmp)
+          B2 then f.call2(tmp)
+    ```
+
+    #colbreak() 
+
+    ```js
+    class B1(y) with
+      fun call1() = 9
+      fun call2(x) =
+        let tmp
+        tmp = x + 2
+        tmp + 2
+
+    class B2(y) with
+      fun call1() = 8
+      fun call2(x) = x + 3
+    ```
+  ]
+]
 
 == Printing Staged Block
 
@@ -592,5 +1004,44 @@ Time: about 2x (from 2s to 1s, eh...)
 Space: don't worry about it
 
 
+/*
+
+  for the per-block thing, saving the function calls until specialization?
+
+  tracking shapes for Path and results
+
+  refinement by pattern matching / selection
+
+
+  // maybe we can introduce how each block is handled here
+
+  Return/ValueRef: recall shape from current context
+
+  Instantiate/Tuple: construct a new shape from current context
+
+  (Dyn)Select/Match: refinement + remove dead branches
+
+  Assign/Scoped/ValDefn: add the shape to ctx
+
+  talk about tracking classes here, which addresses the class staging problems mentioned at the start.
+
+
+  Call: oh boy... specialize if possible, then re-construct the shape
+
+  - non-staged: evaluate if all static, otherwise
+]
+
+function calls: find the correct functions, for both staged and non-staged functions
+
+
+
+== Specialization
+how each individual function is called and specialized, combined with the caching
+
+=== Entry functions
+
+// What happens when other staged modules want to access these private functions?
+Those act as points that the user can call the staged module with. Other specialized functions are there too but they're mine. You can't touch them. I'm not even going to export them for you to access.
+*/
 
 // #magic.bibliography(title: none)

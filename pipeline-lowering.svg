@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 180" font-family="sans-serif" font-size="13">
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- ===== TOP ROW: Dynamic Staging Pipeline (titles only) ===== -->
+
+  <!-- Staged Block -->
+  <rect x="10" y="16" width="130" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
+  <text x="75" y="39" text-anchor="middle">Staged Block</text>
+
+  <!-- arrow + Shape Propagation -->
+  <line x1="140" y1="34" x2="228" y2="34" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="184" y="28" text-anchor="middle" font-size="10" font-style="italic" fill="#555">Shape Propagation</text>
+
+  <!-- Optimized Staged Block -->
+  <rect x="230" y="16" width="190" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
+  <text x="325" y="39" text-anchor="middle">Optimized Staged Block</text>
+
+  <!-- arrow + Pretty Print -->
+  <line x1="420" y1="34" x2="488" y2="34" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="454" y="28" text-anchor="middle" font-size="10" font-style="italic" fill="#555">Pretty Print</text>
+
+  <!-- Output MLscript -->
+  <rect x="490" y="16" width="150" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
+  <text x="565" y="39" text-anchor="middle">Output MLscript</text>
+
+  <!-- arrow + Normal Compilation -->
+  <line x1="640" y1="34" x2="728" y2="34" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="684" y="28" text-anchor="middle" font-size="10" font-style="italic" fill="#555">Normal Compilation</text>
+
+  <!-- Optimized JS -->
+  <rect x="730" y="16" width="130" height="36" rx="5" fill="#d8f0d8" stroke="#4a9a4a" stroke-width="1"/>
+  <text x="795" y="39" text-anchor="middle">Optimized JS</text>
+
+  <!-- ===== Connector: Lowering -> Staged Block (Staging) ===== -->
+  <path d="M 393 110 L 393 80 L 75 80 L 75 52" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="234" y="75" text-anchor="middle" font-size="11" font-style="italic" fill="#555">Staging</text>
+
+  <!-- ===== BOTTOM ROW: Original pipeline-overview (shifted) ===== -->
+
+  <!-- Parser -->
+  <rect x="40"  y="112" width="90" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
+  <text x="85"  y="135" text-anchor="middle">Parser</text>
+  <line x1="130" y1="130" x2="158" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Lexer -->
+  <rect x="160" y="112" width="90" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
+  <text x="205" y="135" text-anchor="middle">Lexer</text>
+  <line x1="250" y1="130" x2="278" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- ... -->
+  <text x="293" y="135" text-anchor="middle" fill="#888">…</text>
+  <line x1="308" y1="130" x2="336" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Lowering (highlighted) -->
+  <rect x="338" y="108" width="110" height="44" rx="5" fill="#fff3cd" stroke="#e6a800" stroke-width="1.5"/>
+  <text x="393" y="132" text-anchor="middle" font-weight="bold">Lowering</text>
+  <text x="393" y="146" text-anchor="middle" font-size="10" fill="#a07000">(Term → Block)</text>
+  <line x1="448" y1="130" x2="476" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- Codegen -->
+  <rect x="478" y="112" width="90" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
+  <text x="523" y="135" text-anchor="middle">Codegen</text>
+  <line x1="568" y1="130" x2="596" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- JS Output -->
+  <rect x="598" y="112" width="110" height="36" rx="5" fill="#d8f0d8" stroke="#4a9a4a" stroke-width="1"/>
+  <text x="653" y="135" text-anchor="middle">JS Output</text>
+</svg>
