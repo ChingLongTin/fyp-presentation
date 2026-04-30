@@ -23,6 +23,8 @@
   js: (name: "mls")
 ))
 
+#hide()
+
 #title-slide()
 
 = Motivation
