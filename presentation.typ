@@ -27,6 +27,17 @@
 
 #title-slide()
 
+/* Checklist
+1. First Class Transformer
+2. Add Formalization to help explaining
+3. Benchmarking
+4. Merging the final to web-demo
+5. Mention the inlining in mlscript for inlining functions to further improve the runtime (benchmark comparison is between inlining vs staging + inlining)
+6. Host the web-demo on github page maybe
+7. Mention the 'stub' thing
+8. Research some more related works.
+*/
+
 = Motivation
 
 == Compile-Time vs. Run-Time Work
@@ -957,12 +968,6 @@ Time: about 2x (from 2s to 1s, eh...)
 
 Code size: don't worry about it, we'll just do lifting
 
-/* Checklist
-1. First Class Transformer
-2. some Formalization
-3. Benchmarking
-4. merging the final to web-demo
-*/
 
 /*
 
