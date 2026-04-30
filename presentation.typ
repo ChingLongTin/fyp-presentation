@@ -488,24 +488,35 @@ staged module Math with
   We write #shape("s") to denote the shape of an expression, distinguishing it from actual values.
 
   #v(0.3em)
-  ```js
-  fun f(p, cond) =
-    let a = 42                    // 42
-    let b = C(p, 2)               // C(dyn, 2)
-    let c = if cond
-      then [1, 2, 3] else C(1,2)  // {[1,2,3], C(1,2)}
-    let d = if b is C then 0 else 1 // 0
-  ```
-
-  Shapes are tracked in a context $Gamma$ mapping paths to their *ShapeSet*.
+  #grid(columns: (22em, 1fr), column-gutter: 1em, align: (left, left + horizon),
+    [
+      #set text(size: 0.85em)
+      ```js
+      fun f(p, cond) =
+        let a = 42
+        let b = C(p, 2)
+        let c = if cond then [1, 2] else C(1, 2)
+        let d = if b is C then 0 else 1
+      ```
+    ],
+    [
+      #set text(size: 0.85em)
+      \
+      #shape("42") \
+      #shape("C(dyn, 2)") \
+      #box[⟦#raw("[1,2]") $union$ #raw("C(1,2)")⟧] \
+      #shape("0")
+    ]
+  )
 ]
 
+
 #slide[
-  Before the formal rules, let's trace propagation on this module:
+  Before the formal rules, let's give a simple trace of shape propagation.
 
   ```js
   class C(val n)
-  staged module If2 with
+  staged module Simple with
     fun f(x) =
       let y
       if x is C then  y = x.n
@@ -654,7 +665,7 @@ staged module Math with
   After all three calls, the staged module contains:
 
   ```js
-  module If2 with
+  module Simple withs
     fun f_C_Dyn(x) =
       let y
       y = x.n
@@ -665,6 +676,10 @@ staged module Math with
     fun test2(dyn)  = f_C_Dyn(C$If2(dyn))
     fun test3()     = 1
   ```
+]
+
+#slide[
+  === Formalization of 
 ]
 
 #slide[
@@ -942,6 +957,12 @@ Time: about 2x (from 2s to 1s, eh...)
 
 Code size: don't worry about it, we'll just do lifting
 
+/* Checklist
+1. First Class Transformer
+2. some Formalization
+3. Benchmarking
+4. merging the final to web-demo
+*/
 
 /*
 
