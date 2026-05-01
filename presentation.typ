@@ -400,12 +400,26 @@ if C(0) is
 #pagebreak()
 
 #align(center)[#image("pipeline-lowering-lowering.svg", width: 100%)]
-#align(center)[#block(width: 50%)[
-#text(size: 0.7em)[*Block*]
+
+#columns(2)[
+#align(center)[
+#text(size: 0.7em)[*Source (MLscript)*]
+#set text(size: 1em)
+#local(number-format: none,
+```js
+if C(0) is
+  Int  then "Int"
+  C(n) then "C(" + n + ")"
+  else "Unknown"
+```)
+]
+#colbreak()
+#align(center)[#block()[
+#text(size: 0.7em)[*Scala Block representation*]
 #set text(size: 0.6em)
 #local(number-format: none,
 ```scala
-Scoped([scrut, n, arg, tmp],
+Scoped(Set(scrut, n, arg, tmp),
   Assign(scrut, Call(C, [0])),
   Match(Ref(scrut), [
     Arm(Cls(Int), Ret("Int")),
@@ -417,17 +431,20 @@ Scoped([scrut, n, arg, tmp],
   ], Ret("Unknown")))
 ```)
 ]]
-
+]
 
 #pagebreak()
 
 #align(center)[#image("pipeline-lowering-instrumentation.svg", width: 100%)]
-#align(center)[#block(width: 50%)[
-#text(size: 0.7em)[*Staged Block*]
-#set text(size: 0.6em)
+#align(center)[#columns(2)[
+#block()[
+#set text(size: 0.7em)
+
+*Staged Block*
+
 #local(number-format: none,
 ```js
-Scoped([scrut, n, arg, tmp],
+let b = Scoped([scrut, n, arg, tmp],
   Assign(scrut, Call(C, [0])),
   Match(Ref(scrut), [
     Arm(Cls(Int), Ret("Int")),
@@ -438,7 +455,22 @@ Scoped([scrut, n, arg, tmp],
       Ret(Call("+", [tmp, ")"]))
   ], Ret("Unknown")))
 ```)
-]]
+#colbreak()
+
+*Scala Block representation*
+#local(number-format: none,
+```scala
+Assign(Symbol("b"),
+  Call("Scoped", [
+    Tuple(Ref(Symbol("scrut")), ...),
+    Assign(Symbol("tmp"), 
+      Call("Assign", [Symbol("scrut")],
+      ...
+    )
+  ]), ...
+)
+```)
+]]]
 
 
 #pagebreak()
@@ -446,21 +478,10 @@ Scoped([scrut, n, arg, tmp],
 #align(center)[#image("pipeline-lowering-optimizer.svg", width: 100%)]
 #align(center)[#block(width: 50%)[
 #text(size: 0.7em)[*Opt(Staged Block)*]
-#set text(size: 0.5em)
-#local(number-format: none, highlights: ((line: 1, start: 1, end: 4, fill: yellow),),
+#local(number-format: none, highlights: ((line: 2, start: 1, end: 3, fill: yellow),),
 ```js
-prop(
-  Scoped([scrut, n, arg, tmp],
-    Assign(scrut, Call(C, [0])),
-    Match(Ref(scrut), [
-      Arm(Cls(Int), Ret("Int")),
-      Arm(Cls(C),
-        Assign(arg, Select(scrut, "n")),
-        Assign(n,   Ref(arg)),
-        Assign(tmp, Call("+", ["C(", n])),
-        Ret(Call("+", [tmp, ")"]))
-    ], Ret("Unknown")))
-)
+let b = ...
+gen(b)
 ```)
 ]]
 
@@ -469,23 +490,10 @@ prop(
 #align(center)[#image("pipeline-lowering-printer.svg", width: 100%)]
 #align(center)[#block(width: 50%)[
 #text(size: 0.6em)[*Print(Opt(Staged Block))*]
-#set text(size: 0.5em)
-#local(number-format: none, highlights: ((line: 1, start: 1, end: 5, fill: yellow),),
+#local(number-format: none, highlights: ((line: 2, start: 1, end: 5, fill: yellow),),
 ```js
-print(
-  prop(
-    Scoped([scrut, n, arg, tmp],
-      Assign(scrut, Call(C, [0])),
-      Match(Ref(scrut), [
-        Arm(Cls(Int), Ret("Int")),
-        Arm(Cls(C),
-          Assign(arg, Select(scrut, "n")),
-          Assign(n,   Ref(arg)),
-          Assign(tmp, Call("+", ["C(", n])),
-          Ret(Call("+", [tmp, ")"]))
-      ], Ret("Unknown")))
-  )
-)
+let b = ...
+print(gen(b))
 ```)
 ]]
 
@@ -500,14 +508,21 @@ print(
 #pagebreak()
 
 #align(center)[#image("pipeline-lowering-output.svg", width: 100%)]
-#align(center)[#block(width: 50%)[
+#align(center)[#block(width: 75%)[
 #text(size: 0.7em)[*Generated MLscript*]
 #set text(size: 0.8em)
-#local(number-format: none, [
+#local(number-format: none, [ #columns(2)[
+```js
+if C(0) is
+  Int  then "Int"
+  C(n) then "C(" + n + ")"
+  else "Unknown"
+```
+#colbreak()
 ```js
 "C(0)"
 ```
-])
+]])
 ]]
 
 = Staging
