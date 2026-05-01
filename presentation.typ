@@ -67,8 +67,7 @@ Programmers often write code in a clear, general style, even when parts of it co
 
   *... can actually be written as*
   ```js
-  fun dotWith3(v) =
-    v(0) + 2 * v(2)
+  fun dotWith3(v) = v.(0) + 2 * v.(2)
   ```
 ]
 
@@ -255,7 +254,7 @@ See memoization of code fragments in @swadi2006monadic.
 Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
 
 
-== Class specialization
+== Class Specialization
 
 #columns(2)[
   #local(lang-format: (_, _, _) => [],
@@ -369,13 +368,13 @@ Hence, our approach is a combination of *metaprogramming* (code generator) and *
 
 == MLscript Compiler
 
-Written in Scala
+MLscript Compiler is a compiler written in Scala that converts MLscript to JavaScript.
 
 #align(center)[#image("pipeline-overview.svg", width: 95%)]
 - Lexer/Parser: converts source code into AST
-- Elaborator/Resolver: Deal with references
-- #strong[Lowering]: converts AST to a simplified format
-- Codegen: Turn AST into executable code (JavaScript).
+- Elaborator/Resolver: deal with references
+- #strong[Lowering]: converts AST of *Term* to AST of *Block*
+- Codegen: turn AST into executable code (JavaScript).
 
 == Dynamic Staging Recipe
 
@@ -510,22 +509,30 @@ print(gen(b))
 #pagebreak()
 
 #align(center)[#image("pipeline-lowering-output.svg", width: 100%)]
-#align(center)[#block(width: 75%)[
-#text(size: 0.7em)[*Generated MLscript*]
-#set text(size: 0.8em)
-#local(number-format: none, [ #columns(2)[
-```js
-if C(0) is
-  Int  then "Int"
-  C(n) then "C(" + n + ")"
-  else "Unknown"
-```
-#colbreak()
-```js
-"C(0)"
-```
-]])
+#align(center)[#block(width: 70%)[
+#columns(2)[
+  #text(size: 0.8em)[*Source MLscript*]
+  #set text(size: 0.8em)
+  #local(number-format: none,
+  ```js
+  if C(0) is
+    Int  then "Int"
+    C(n) then "C(" + n + ")"
+    else "Unknown"
+  ```)
+
+  #colbreak()
+
+  #text(size: 1em)[*Generated MLscript*]
+  #set text(size: 0.8em)
+  #local(number-format: none, [
+  ```js
+  "C(0)"
+  ```
+  ])
+]
 ]]
+
 
 = Staging
 
@@ -756,6 +763,8 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
   ```
 ]
 
+
+
 #slide[
   For staged classes, we can treat the parameters of the class as the function parameter, then specialise the functions as usual.
   ```js
@@ -767,6 +776,8 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
     fun add(cls)() = cls.x + cls.y
   ```
 ]
+
+#focus-slide[A short demo on Instrumentation]
 
 #let shape(s) = box[⟦#raw(s)⟧]
 
@@ -830,6 +841,75 @@ Simplify lambda functions by turning them into classes
   //   $::= epsilon | Gamma, p mapsto s quad (p eq.not x)$, [],
 )
 
+== Block Example
+
+#let hl(line, start, end: none, fill: yellow) = if end == none {
+  (line: line, start: start, fill: fill)
+} else {
+  (line: line, start: start, end: end, fill: fill)
+}
+
+#grid(columns: (1fr, 1fr), column-gutter: 1.5em, align: (left, left + horizon),
+[
+  #only("2")[#codly(highlights: (
+    hl(2, 11, end: 13),
+    hl(3, 6, end: 6),
+    hl(4, 12, end: 12),
+    hl(4, 16, end: 16),
+  ))]
+  #only("3")[#codly(highlights: (
+    hl(4, 12, end: 16, fill: aqua),
+    hl(5, 10, end: 17, fill: aqua),
+  ))]
+  #only("4")[#codly(highlights: (
+    hl(4, 5, end: 5, fill: green),
+    hl(5, 5, end: 8, fill: green),
+  ))]
+  #only("5")[#codly(highlights: (
+    hl(4, 5, end: 17, fill: orange),
+    hl(5, 5, end: 18, fill: orange),
+  ))]
+  #only("6")[#codly(highlights: (
+    hl(2, 3, end: 13, fill: rgb("#ffd1dc")),
+  ))]
+  #only("7")[#codly(highlights: (
+  ))]
+  ```js
+  fun f(x) =
+    let y = x.n
+    if x is
+      C then y + 1
+      else new C(1)
+  ```
+],
+[
+  #only("2")[
+    *Path* $p ::= iota | x | p.n$ \
+    #text(size: 0.85em)[references like `x` and field accesses `x.n`]
+  ]
+  #only("3")[
+    *Result* $r ::= p | f(overline(p)) | bold("new") med C(overline(p)) | [overline(p)]$ \
+    #text(size: 0.85em)[a path, call, `new`, or tuple]
+  ]
+  #only("4")[
+    *Match pattern* $pi ::= iota | C | \[\]^n | \_$ \
+    #text(size: 0.85em)[here: `C` (class) and `_` (else)]
+  ]
+  #only("5")[
+    *Match arm* $kappa ::= pi #h(0.3em) bold("then") #h(0.3em) b$ \
+    #text(size: 0.85em)[a pattern paired with its body]
+  ]
+  #only("6")[
+    *Non-tail block* $B ::= epsilon | bold("if") med p med bold("is") med overline(kappa); B | x = r; B | bold("let") med x; B$ \
+    #text(size: 0.85em)[Two non-tailed block: assignment and pattern matching]
+  ]
+  #only("7")[
+    *Block* $b ::= bold("return") med r | bold("end") | B; med b$ \
+    #text(size: 0.85em)[There is an implicit End at this program since there is no return.]
+  ]
+]
+)
+
 == Shape Definition
 
 #pagebreak()
@@ -875,24 +955,39 @@ staged module M with
 
 Walking through `test()`:
 
-+ Argument `x` has shape #shape("2") (a literal).
++ Argument `x` has shape #shape("2")
 + Specialise `add1` with `x` ↦ #shape("2"); inside the body, `x` looks up #shape("2") in the context.
 + `x + 1` folds: #shape("2") `+` #shape("1") $arrow$ #shape("3").
 + Cache the result as `add1_Lit2() = 3`; rewrite the call site `add1(2)` to `add1_Lit2()`.
 
 Final shape of `test()`: #shape("3"). Body collapses to a constant.
 
+#pagebreak()
+
+=== A Tiny Example (Residual Module)
+
+The output residual module is generated with the specialized functions:
+
+```js
+module M with
+  fun add1_Lit2() = 3
+  fun test() = add1_Lit2()
+```
+
+Now, we begin to explain the mechanism of Shape Propagation, which is broken down into *Shape of Path*, *Shape of Result*, then *Shape of Block*.
+
 
 
 == Shape of Path  ($Gamma tack.r p => s$)
 
-We evaluate paths $p$ to their shapes $s$.
+We maintain a context $Gamma$ which tracks the shape of each path encountered so that we can evaluate the shape of every path.
 
 #let rule(name, premises, conclusion) = {
+  set text(size: 0.75em)
   set align(center)
   stack(dir: ttb, spacing: 0.6em,
     premises,
-    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em),
+    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 1.5em),
       conclusion,
     ),
   )
@@ -904,6 +999,7 @@ We evaluate paths $p$ to their shapes $s$.
   width: 100%,
 )[
   #set align(left)
+  #set text(size: 0.85em)
   #text(fill: luma(110), style: "italic")[Example] \
   #local(number-format: none, snippet)
   #body
@@ -911,7 +1007,7 @@ We evaluate paths $p$ to their shapes $s$.
 
 #v(1fr)
 #align(center)[
-  #grid(columns: (0.9fr, 1.2fr, 1.2fr), column-gutter: 1.5em, row-gutter: 0.8em,
+  #grid(columns: 3, column-gutter: 1.5em, row-gutter: 0.8em,
     align: (_, row) => if row == 0 { bottom + center } else { top + center },
     rule([Lit], $ $, $Gamma tack.r iota => ⟦iota⟧$),
     rule([Path], $(p mapsto s) in Gamma quad s eq.not bot$, $Gamma tack.r p => s$),
@@ -925,15 +1021,13 @@ We evaluate paths $p$ to their shapes $s$.
     example(```js
     x
     ```)[
-      $Gamma = x mapsto ⟦C(n\:⟦1⟧)⟧$
-      #box(width: 100%, stroke: (top: 0.6pt), inset: (top: 0.3em, x: 0.4em))[
-        $Gamma tack.r x => ⟦C(n\:⟦1⟧)⟧$
-      ]
+      $Gamma = x mapsto ⟦C(n\:1)⟧$ \
+      $Gamma tack.r x => ⟦C(n\:1)⟧$
     ],
     example(```js
     x.n
     ```)[
-      $Gamma = x mapsto ⟦C(n\:⟦1⟧)⟧$ \
+      $Gamma = x mapsto ⟦C(n\:1)⟧$ \
       $Gamma tack.r x.n => ⟦1⟧$
     ],
   )
@@ -970,8 +1064,8 @@ $
   #set text(size: 1em)
   #text(fill: luma(110), style: "italic")[Example] \
   $
-    "sel"(⟦[1,2]⟧ union ⟦[2,3,4]⟧, ⟦1⟧)
-      &= "sel"(⟦[1,2]⟧, ⟦1⟧) union "sel"(⟦[2,3,4]⟧, ⟦1⟧) \
+    "sel"(⟦1,2⟧ union ⟦2,3,4⟧, ⟦1⟧)
+      &= "sel"(⟦1,2⟧, ⟦1⟧) union "sel"(⟦2,3,4⟧, ⟦1⟧) \
       &= ⟦2⟧ union ⟦3⟧
   $
 ]
@@ -986,10 +1080,11 @@ $
 We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $s$.
 
 #let rule(name, premises, conclusion) = {
+  set text(size: 0.9em)
   set align(center)
   stack(dir: ttb, spacing: 0.6em,
     premises,
-    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em),
+    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 1.5em),
       conclusion,
     ),
   )
@@ -1001,6 +1096,7 @@ We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $
   width: 100%,
 )[
   #set align(left)
+  #set text(size: 0.85em)
   #text(fill: luma(110), style: "italic")[Example] \
   #local(number-format: none, snippet)
   #body
@@ -1016,7 +1112,7 @@ We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $
       $Gamma tack.r p ~> p => s$),
     rule([Tuple],
       $Gamma tack.r p_i => s_i$,
-      $Gamma tack.r [overline(p_i)^n] ~> [overline(p_i)^n] => ⟦[overline(s_i)^n]⟧$),
+      $Gamma tack.r [overline(p_i)^n] ~> [overline(p_i)^n] => ⟦overline(s_i)^n⟧$),
     rule([New],
       $Gamma tack.r p_i => s_i$,
       $Gamma tack.r bold("new") med C(overline(p_i)) ~> bold("new") med C(overline(p_i)) => ⟦C(overline(n_i\:s_i))⟧$),
@@ -1030,13 +1126,13 @@ We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $
     [x, y]
     ```)[
       $Gamma = x mapsto ⟦1⟧, y mapsto ⟦2⟧$ \
-      $Gamma tack.r [x,y] ~> [x,y] => ⟦[⟦1⟧, ⟦2⟧]⟧$
+      $Gamma tack.r [x,y] ~> [x,y] => ⟦1, 2⟧$
     ],
     example(```js
     new Pair(x, y)
     ```)[
       $Gamma = x mapsto ⟦1⟧, y mapsto ⟦2⟧$ \
-      $Gamma tack.r bold("new") med "Pair"(x,y) => ⟦"Pair"(a\:⟦1⟧, b\:⟦2⟧)⟧$
+      $Gamma tack.r bold("new") med "Pair"(x,y) => ⟦"Pair"(a\:1, b\:2)⟧$
     ],
   )
 ]
@@ -1052,10 +1148,11 @@ We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $
 === Shape of Result (`sor`) — Staged Application
 
 #let rule(name, premises, conclusion) = {
+  set text(size: 0.85em)
   set align(center)
   stack(dir: ttb, spacing: 0.6em,
     premises,
-    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em),
+    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 1.5em),
       conclusion,
     ),
   )
@@ -1089,8 +1186,8 @@ When $f$ is *staged*, we recursively specialise its body on the argument shapes.
       fun test() = pyth(2, 3)
     ```
   )
-  Specialise $"pyth"_"gen" thin (⟦2⟧, ⟦3⟧)$ $arrow$ produces `pyth_Lit2_Lit3() = 13`, shape $⟦13⟧$. The specialised function will be saved to the cache.\
-  Conclusion: $epsilon tack.r "pyth"(2,3) ~> 13 => ⟦13⟧$
+  Specialise $"pyth"_"gen" thin (⟦2⟧, ⟦3⟧)$ $arrow$ produces `pyth_Lit2_Lit3() = 13`, shape $⟦13⟧$. The $f_"gen"$ function will save the specialised function in a cache.\
+  Conclusion: $epsilon tack.r "pyth"(2,3) ~> "pyth_Lit2_Lit3()" => ⟦13⟧$
 ]
 
 #v(1fr)
@@ -1141,10 +1238,11 @@ After propagation, the call site `pyth(2, 3)` is rewritten to its cached variant
 === Shape of Result (`sor`) — Non-Staged Application
 
 #let rule(name, premises, conclusion) = {
+  set text(size: 0.85em)
   set align(center)
   stack(dir: ttb, spacing: 0.6em,
     premises,
-    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 4em),
+    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 6em),
       conclusion,
     ),
   )
@@ -1221,7 +1319,9 @@ When $f$ is *non-staged*, we don't have its Staged Block. Two sub-cases.
       fun sq(x) = x * x
 
     staged module Staged with
-      fun pyth(x, y) = NonStaged.sq(x) + NonStaged.sq(y)
+      fun pyth(x, y) = 
+        NonStaged.sq(x) 
+        + NonStaged.sq(y)
       fun test() = pyth(2, 3)
     ```
   )
@@ -1238,7 +1338,6 @@ When $f$ is *non-staged*, we don't have its Staged Block. Two sub-cases.
     ```
   )
 ]
-- Since every params of ```js sq(x)``` is static, we will call `sq` to evaluate the result completely.
 
 - No specialised functions are generated for the non-staged module `NonStaged`.
 
@@ -1252,7 +1351,7 @@ Recall that during execution of the optimizer, we already compile the function `
 
 #v(1fr)
 
-#align(center)[#image("pipeline-lowering-execute.svg", width: 100%)]
+#align(center)[#image("pipeline-staging-only.svg", width: 100%)]
 
 #v(1fr)
 
@@ -1271,7 +1370,7 @@ Recall that during execution of the optimizer, we already compile the function `
     "static"(⟦C(overline(n_i\:s_i))⟧) &= and.big_i "static"(s_i) &quad
     "static"(s_1 union s_2) &= "static"(s_1) and "static"(s_2) \
     "static"(bold("dyn")) &= bold("false") &quad
-    "static"(bot) &= bold("false")
+    "static"(bot) &= bold("err")
   $
 ]
 
@@ -1279,7 +1378,7 @@ Recall that during execution of the optimizer, we already compile the function `
   fill: luma(245), stroke: 0.5pt + luma(180),
   inset: 0.7em, radius: 4pt, width: 100%,
 )[
-  #text(weight: "bold")[Remark.] $"static"(s)$ returns true iff no subshape of $s$ contains $bold("dyn")$.
+  #text(weight: "bold")[Remark.] $"static"(s)$ returns true iff s is non-empty and no subshape of $s$ contains $bold("dyn")$.
 ]
 
 #v(1fr)
@@ -1292,11 +1391,12 @@ Recall that during execution of the optimizer, we already compile the function `
 
 #pagebreak()
 
-== Shape Propagation
+== Shape of Block (Pattern Matching)
 
 === Pattern Matching
 
-Before giving the formal rules, let's give a simple trace of shape propagation for pattern matching.
+For propagating on Block, the pattern matching Block is the most interesting. Let's dive in with an example.
+
 
 #block(below: 0pt)[
   #set text(size: 0.85em)
@@ -1362,10 +1462,8 @@ Before giving the formal rules, let's give a simple trace of shape propagation f
 
   Argument shape: #shape("C(n: dyn)"). Specialise `f` with `x` ↦ #shape("C(n: dyn)").
 
-  #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
-  #only("3")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
-  #only("4")[#codly(highlights: ((line: 4, start: 5, fill: yellow),))]
-  #only("5")[#codly(highlights: ((line: 7, start: 3, fill: yellow),))]
+  #only("2")[#codly(highlights: ((line: 4, start: 5, fill: yellow),))]
+  #only("3")[#codly(highlights: ((line: 7, start: 3, fill: yellow),))]
   ```js
   fun f(x) =
     let y
@@ -1381,14 +1479,12 @@ Before giving the formal rules, let's give a simple trace of shape propagation f
   #set text(size: 0.9em)
   #ctxbox[
     `x` ↦ #shape("C(n: dyn)")
-    #only("2-3")[\ `y` ↦ #shape("⊥")]
-    #only("4-")[\ `y` ↦ #shape("dyn")]
+    #only("1")[\ `y` ↦ #shape("⊥")]
+    #only("2-")[\ `y` ↦ #shape("dyn")]
   ]
 
-  #pause
-  + `let y`: `y` ↦ #shape("⊥")
-  #pause
-  + `if x is C`: `filter(`#shape("C(n: dyn)")`, C)` = #shape("C(n: dyn)") so `then` is viable; `rest` = #shape("⊥") so `else` is dead
+  Same opening as Trace 1 (`let y`, then `if x is C` keeps `then`, kills `else`). Continuing in `then`:
+
   #pause
   + In `then`: `sop(x.n)` = `sel(`#shape("C(n: dyn)")`, n)` = #shape("dyn")
   #pause
@@ -1402,7 +1498,7 @@ Before giving the formal rules, let's give a simple trace of shape propagation f
 #columns(2)[
   === Trace 3: `test3() = f(0)`
 
-  Argument shape: #shape("0") (literal). Specialise `f` with `x` ↦ #shape("0").
+  Argument shape: #shape("0"). Specialise `f` with `x` ↦ #shape("0").
 
   #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
   #only("3")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
@@ -1447,12 +1543,12 @@ After all three calls, the staged module contains:
 
 ```js
 module Simple with
-  fun f_C_Dyn(x) =        // remove match
+  fun f_C_Lit2(x) = 3     // Trace A
+  fun f_C_Dyn(x) =        // Trace B
     let y
     y = x.n
-    y + 1                 
-  fun f_C_Lit2(x) = 3     // fully specialised
-  fun f_Lit0()    = 1     // fully specialised
+    y + 1
+  fun f_Lit0()    = 1     // Trace C specialised
   fun test()      = 3
   fun test2(dyn)  = f_C_Dyn(C(dyn))
   fun test3()     = 1
@@ -1464,19 +1560,24 @@ module Simple with
 
 === Branch Filter (`filter`)
 
-$"filter"$ removes impossible shapes from the branches of a pattern match.
+#block(fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.6em, radius: 4pt, width: 100%)[
+  #set text(size: 0.9em)
+  *Intuition.* $"filter"(s, pi)$ keeps the part of shape $s$ that *matches* the pattern $pi$ — i.e. the shape flowing into a branch.
+]
 
-#block[
-  #set text(size: 0.85em)
-  $
-    "filter"(s, \_) &= s
-      & quad "filter"(⟦iota_1⟧, iota_2) &= ⟦iota_1⟧ quad "if " iota_1 = iota_2 \
-    "filter"(⟦[overline(s_i)^n]⟧, \[\]^n) &= ⟦[overline(s_i)^n]⟧
-      & quad "filter"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= ⟦C(overline(n_i\:s_i)^m)⟧ \
-    "filter"(bold("dyn"), pi) &= "silh"(pi)
-      & quad "filter"(s_1 union s_2, pi) &= "filter"(s_1, pi) union "filter"(s_2, pi) \
-    "filter"(s, pi) &= bot quad "otherwise"
-  $
+#align(center)[
+  #block[
+    #set text(size: 0.75em)
+    $
+      "filter"(s, \_) &= s
+        & quad "filter"(⟦iota_1⟧, iota_2) &= ⟦iota_1⟧ quad "if " iota_1 = iota_2 \
+      "filter"(⟦[overline(s_i)^n]⟧, \[\]^n) &= ⟦[overline(s_i)^n]⟧
+        & quad "filter"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= ⟦C(overline(n_i\:s_i)^m)⟧ \
+      "filter"(bold("dyn"), pi) &= "silh"(pi)
+        & quad "filter"(s_1 union s_2, pi) &= "filter"(s_1, pi) union "filter"(s_2, pi) \
+      "filter"(s, pi) &= bot quad "otherwise"
+    $
+  ]
 ]
 
 #block(
@@ -1484,7 +1585,7 @@ $"filter"$ removes impossible shapes from the branches of a pattern match.
   inset: (top: 0.5em, x: 0.4em),
   width: 100%,
 )[
-  #set text(size: 0.8em)
+  #set text(size: 0.7em)
   #text(fill: luma(110), style: "italic")[Example] \
   $
     "filter"(⟦C(n\: bold("dyn"))⟧, C) &= ⟦C(n\: bold("dyn"))⟧ \
@@ -1503,23 +1604,25 @@ $"filter"$ removes impossible shapes from the branches of a pattern match.
 
 $"silh"(pi)$ creates the shape of a pattern $pi$, with all sub-shapes set to $bold("dyn")$.
 
-#block[
-  #set text(size: 0.85em)
-  $
-    "silh"(iota) = ⟦iota⟧ quad
-    "silh"(C) = ⟦C(overline(bold("dyn"))^n)⟧ quad
-    "silh"(\[\]^n) = ⟦[overline(bold("dyn"))^n]⟧ quad
-    "silh"(\_) = bold("dyn")
-  $
+#align(center)[
+  #block[
+    #set text(size: 0.85em)
+    $
+      "silh"(iota) = ⟦iota⟧ quad
+      "silh"(C) = ⟦C(overline(bold("dyn"))^n)⟧ quad
+      "silh"(\[\]^n) = ⟦overline(bold("dyn"))^n⟧ quad
+    $
+  ]
 ]
-
-Used in $"filter"(bold("dyn"), pi) = "silh"(pi)$: when the scrutinee is $bold("dyn")$, the branch becomes viable with the silhouette shape — a concrete class/literal shell wrapping $bold("dyn")$ sub-shapes.
 
 #pagebreak()
 
 === Branch Remainder (`rest`)
 
-$"rest"$ removes shapes already covered by a match pattern.
+#block(fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.6em, radius: 4pt, width: 100%)[
+  #set text(size: 0.9em)
+  *Intuition.* $"rest"(s, pi)$ keeps the part of shape $s$ that does *not* match $pi$ — i.e. the shape flowing out of a branch
+]
 
 #block[
   #set text(size: 0.85em)
@@ -1546,7 +1649,6 @@ $"rest"$ removes shapes already covered by a match pattern.
       &= "rest"(⟦C(n\: bold("dyn"))⟧, C) union "rest"(⟦0⟧, C) \
       &= bot union ⟦0⟧ = ⟦0⟧
   $
-  After matching the `C` arm, the remainder shape for the `else` branch is $⟦0⟧$.
 ]
 
 #pagebreak()
@@ -1589,10 +1691,9 @@ Before propagating into `fib(dyn)`, we *pre-insert a stub* into the cache:
 
 #v(0.5em)
 
-Now when propagating the `n then fib(n - 1) + fib(n - 2)` arm:
+Now when propagating the `fib(n - 1) + fib(n - 2)` arm:
 
 + `fib(n - 1)` has argument shape #shape("dyn") — matches the existing stub → rewritten to `fib_Dyn(n - 1)`.
-+ Return shape #shape("dyn") is read from the stub; recursion stops.
 + `fib(n - 2)` likewise hits the stub → rewritten to `fib_Dyn(n - 2)`.
 + Result shape of the arm: #shape("dyn") `+` #shape("dyn") = #shape("dyn").
 
@@ -1623,7 +1724,7 @@ fun fib_Dyn(n) = if n is
 #block(
   fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
 )[
-  #text(weight: "bold")[Remark.] Stub insertion only guarantees termination of the first stage (shape propagation) when *the original program terminates*. 
+  #text(weight: "bold")[Remark.] Stub insertion only guarantees termination of shape propagation when *the original program terminates*. 
 ]
 
 === Non Termination 2
@@ -1640,7 +1741,7 @@ staged module Staged with
 
 With `xs` ↦ #shape("dyn") and `i` ↦ #shape("0") on the first call, `xs.(0)` is #shape("dyn") — both branches viable.
 
-The recursive call has `i` ↦ #shape("1"), then #shape("2"), ... — Shape Propagation diverges!
+The recursive call has `i` ↦ #shape("1"), then #shape("2"), ... Shape Propagation diverges :(
 
 
 
@@ -1672,13 +1773,14 @@ With `i` ↦ #shape("dyn") after decay, `i + 1` ↦ #shape("dyn") too. The recur
 
 #pagebreak()
 
-Combining `filter`, `rest`, dead branch elimination and `decay` yields the following formalization:
+Combining `filter`, `rest`, dead branch elimination and `decay` yields the following formalization for pattern matching.
 
 #let rule(name, premises, conclusion) = {
+  set text(size: 0.85em)
   set align(center)
   stack(dir: ttb, spacing: 0.6em,
     premises,
-    box(width: 100%, stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em), conclusion),
+    box(width: 100%, stroke: (top: 0.6pt), inset: (top: 0.4em, x: 1.5em), conclusion),
   )
 }
 
@@ -1708,22 +1810,25 @@ Combining `filter`, `rest`, dead branch elimination and `decay` yields the follo
 
 
 == Staged Class
-Similar to staging module, we can stage classes as well, where we specialises on its method, with the main difference being dynamic dispatching `x.f()`.
+Similar to staging module, we can stage classes as well, where we specialises on its method, with the main ingredient being how to handle dynamic dispatching `x.f()`
 
-#local(lang-format: (_, _, _) => [],
-```js
-staged class B1(val y) with 
-  fun call(x) = x + 2 + y
-staged class B2(val y) with 
-  fun call(x) = x + y
-staged module M with
-  fun twice(f, x) = f.call(f.call(x))
-  fun pick(x, y, b) = if b then x else y
-  fun f(b) =
-    let m = pick(new B1(2), new B2(3), b)
-    twice(m, 5)
-```
-)
+#block[
+  #set text(size: 0.85em)
+  #local(lang-format: (_, _, _) => [],
+  ```js
+  staged class B1(val y) with 
+    fun call(x) = x + 2 + y
+  staged class B2(val y) with 
+    fun call(x) = x + y
+  staged module M with
+    fun twice(f, x) = f.call(f.call(x))
+    fun pick(x, y, b) = if b then x else y
+    fun f(b) =
+      let m = pick(new B1(2), new B2(3), b)
+      twice(m, 5)
+  ```
+  )
+]
 
 
 
@@ -1865,9 +1970,10 @@ staged module M with
         ]
         cache `f.call1()` in `B1` $arrow$ #shape("9")
       - `f` = #shape("B2(3)"): cache `f.call1()` in `B2` $arrow$ #shape("8")
+    + Output a pattern matching $arrow$ ⟦#raw("9") $union$ #raw("8")⟧
   ]
   #only("4-")[
-    #set enum(start: 3)
+    #set enum(start: 4)
     + `tmp = f.call(x)`: bind `tmp` to #box[⟦#raw("9") $union$ #raw("8")⟧]
   ]
 ]
@@ -1889,8 +1995,10 @@ staged module M with
 
   Recall:
   ```js
-  class B1(y) with fun call(x) = x + 2 + y
-  class B2(y) with fun call(x) = x + y
+  class B1(y) with 
+    fun call(x) = x + 2 + y
+  class B2(y) with 
+    fun call(x) = x + y
   ```]
 
   #colbreak()
@@ -1902,10 +2010,11 @@ staged module M with
     `tmp` ↦ #box[⟦#raw("9") $union$ #raw("8")⟧]
   ]
 
-  #set enum(start: 4)
+  #set enum(start: 5)
   + `f.call(tmp)` with `tmp` in #box[⟦#raw("9") $union$ #raw("8")⟧]: split again, body kept as code
     - `f` = #shape("B1"): cache `f.call2(x) = x + 2 + 2` in `B1` $arrow$ #box[⟦#raw("13") $union$ #raw("12")⟧]
     - `f` = #shape("B2"): cache `f.call2(x) = x + 3` in `B2` $arrow$ #box[⟦#raw("12") $union$ #raw("11")⟧]
+  + Output a pattern matching with a returned shape of ⟦#raw("13") $union$ #raw("12") $union$ #raw("11")⟧
 ]
 
 #pagebreak()
@@ -1942,6 +2051,8 @@ After propagation, the residual `M` and the residual classes contain:
     ```
   ],
   [
+    #[
+    #codly(offset: 9)
     ```js
     fun twice1(f) =
       let tmp
@@ -1952,6 +2063,7 @@ After propagation, the residual `M` and the residual classes contain:
         B1 then f.call2(tmp)
         B2 then f.call2(tmp)
     ```
+    ]
     
     #v(1em)
     #block(
@@ -1967,7 +2079,7 @@ After propagation, the residual `M` and the residual classes contain:
 
 == Inlining
 
-A typical module after Dynamic Staging will look like the following.
+A typical module after Dynamic Staging would look like the following:
 
 #v(1em)
 
@@ -2029,22 +2141,29 @@ After all the specialised functions are completed, we need to write the function
 
 We do not export the specialised functions, in order to activate the inliner for the specialised functions.
 
-// FIXME: use the real example of power instead of an arbitrary module?
-```js
-staged module M with
-  val funCache = new Map([
-    ["f1", ...],
-    ["f2", ...],
-    ["g1", ...]
-  ])
-```
+#columns(2)[
+  #set text(size: 0.9em)
+  ```js
+  staged module Math with
+    val funCache = new Map([
+      ["pow_Dyn_Lit1", Scoped(...)],
+      ["pow_Dyn_Lit2", Scoped(...)],
+    ])
+  ```
 
-```js
-module M with
-  fun f1(x, y) = ...
-  fun f2() = ...
-  fun g1() = ...
-```
+  #colbreak()
+
+  #text(fill: luma(110), style: "italic")[Printed Output File:]
+  ```js
+  module Math with
+    fun pow_Dyn_Lit1(x) = x
+    fun pow_Dyn_Lit2(x) =
+      let {tmp, tmp1}
+      tmp = 1
+      tmp1 = pow_Dyn_Lit1(x)
+      *(x, tmp1)
+  ```
+]
 
 
 #pagebreak()
@@ -2070,14 +2189,38 @@ Evaluate matrix multiplications when the matrices are known values.
 
 Benchmark: Transform 16k random coordinates using a known transformation matrices
 
-=== Time
+#v(1em)
 
-// TODO: make graph
-Unstaged: ~2s
+#let bar(pct, color, label) = block(width: 100%, height: 1.4em, above: 0pt, below: 0pt)[
+  #rect(width: pct, height: 100%, fill: color, radius: 2pt)
+  #place(right, dy: -1.3em)[#box(inset: (x: 0.4em), text(weight: "bold", label))]
+]
 
-Time: about 2x (from 2s to 1s, eh...)
+#columns(2)[
+  === Time Taken (ns)
+  #v(0.5em)
+  #grid(
+    columns: (auto, 1fr),
+    row-gutter: 1.2em,
+    column-gutter: 0.8em,
+    align: horizon,
+    [*Before*], bar(100%, luma(220), [1,455,662,542]),
+    [*After*],  bar(38%, rgb("e08020"), [553,668,000]),
+  )
 
-Code size: don't worry about it, we'll just do lifting
+  #colbreak()
+
+  === Code Size (JS)
+  #v(0.5em)
+  #grid(
+    columns: (auto, 1fr),
+    row-gutter: 1.2em,
+    column-gutter: 0.8em,
+    align: horizon,
+    [*Before*], bar(24.8%, luma(220), [242]),
+    [*After*],  bar(100%, rgb("e08020"), [975]),
+  )
+]
 
 
 /*
