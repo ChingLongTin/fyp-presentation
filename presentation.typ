@@ -2126,7 +2126,16 @@ During *the second stage of compilation*, we utilize the MLscript compiler's exi
 
 Applied in 3D rendering.
 
-$ arrow(v) = M V P dot arrow(u) $
+
+#box(width: 100%)[$ arrow(v) = M V P dot arrow(u) $]
+
+#align(center)[#box(width: 60%)[
+  #image("model_to_world_to_camera.png")
+  (from opengl-tutorial)
+]]
+
+
+#pagebreak()
 
 Evaluate matrix multiplications when the matrices are known values.
 
