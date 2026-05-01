@@ -2110,6 +2110,14 @@ Benchmark: Transform 16k random coordinates using a known transformation matrice
   )
 ]
 
+#pagebreak()
+== Web-demo & QnA
+
+#align(center)[
+  #link("https://chinglongtin.github.io/mlscript/")
+  #v(1em)
+  #image("qrcode.png", width: 40%)
+]
 
 /*
 
@@ -2182,4 +2190,3 @@ Those act as points that the user can call the staged module with. Other special
 #pagebreak()
 
 #bibliography("ref.bib")
-
