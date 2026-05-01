@@ -1601,25 +1601,24 @@ staged module M with
 )
 
 
+
 #pagebreak()
 
 #columns(2)[
   === Trace A: `f(dyn)`
 
-
+  #set text(size: 0.95em)
   Specialise `f` with `b` ↦ #shape("dyn").
 
   #only("2-")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
-  #[#set text(size: 0.85em)
   ```js
   fun f(b) =
     let m = pick(new B1(2),new B2(3),b)
     twice(m, 5)
-  ```]
+  ```
 
   #colbreak()
 
-  #set text(size: 0.85em)
   #ctxbox(title: [`f`'s ctx])[
     `b` ↦ #shape("dyn")
     #only("2-")[\ `m` ↦ #shape("⊥")]
@@ -1637,19 +1636,18 @@ staged module M with
 #columns(2)[
   === Trace B: `pick(B1(2), B2(3), dyn)`
 
+  #set text(size: 0.95em)
   #only("2")[#codly(highlights: ((line: 1, start: 5, end: 17, fill: yellow),))]
   #only("3")[#codly(highlights: ((line: 2, start: 6, fill: yellow),))]
   #only("4")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
-  #[#set text(size: 0.85em)
   ```js
   fun pick(x, y, b) =
     if b then x
     else y
-  ```]
+  ```
 
   #colbreak()
 
-  #set text(size: 0.85em)
   #ctxbox(title: [`pick`'s ctx])[
     `x` ↦ #shape("B1(2)") \
     `y` ↦ #shape("B2(3)") \
@@ -1672,18 +1670,17 @@ staged module M with
 #columns(2)[
   === Trace A (continued): back in `f`
 
+  #set text(size: 0.85em)
   #only("1-2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
   #only("3-")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
-  #[#set text(size: 0.85em)
   ```js
   fun f(b) =
     let m = pick(new B1(2), new B2(3), b)
     twice(m, 5)
-  ```]
+  ```
 
   #colbreak()
 
-  #set text(size: 0.85em)
   #ctxbox(title: [`f`'s ctx])[
     `b` ↦ #shape("dyn") \
     `m` ↦ #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧]
@@ -1786,55 +1783,118 @@ staged module M with
     - `f` = #shape("B2"): cache `f.call2(x) = x + 3` in `B2` $arrow$ #box[⟦#raw("12") $union$ #raw("11")⟧]
 ]
 
-
 #pagebreak()
 
 === Resulting Cache
 
-After propagation, `M` and the staged classes contain:
+After propagation, the residual `M` and the residual classes contain:
+
+#grid(columns: (1fr, 1fr), column-gutter: 1.5em,
+  [
+    ```js
+    module M with
+      fun f(b) =
+        let m, tmp1, tmp2
+        tmp1 = new B1(2)
+        tmp2 = new B2(3)
+        m = pick1(tmp1, tmp2, b)
+        twice1(m)
+      fun pick1(x, y, b) =
+        if b then new B1(2) else new B2(3)
+    ```
+
+    ```js
+    class B1(y) with
+      fun call1() = 9
+      fun call2(x) =
+        let tmp
+        tmp = x + 2
+        tmp + 2
+
+    class B2(y) with
+      fun call1() = 8
+      fun call2(x) = x + 3
+    ```
+  ],
+  [
+    ```js
+      fun twice1(f) =
+        let tmp
+        if f is
+          B1 then tmp = f.call1()
+          B2 then tmp = f.call1()
+        if f is
+          B1 then f.call2(tmp)
+          B2 then f.call2(tmp)
+    ```
+    
+    #v(1em)
+    #block(
+      fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
+    )[
+      #set text(size: 0.85em)
+      #text(weight: "bold")[Remark.] If `f`'s shape included an *unstaged* class `B3`, we could not specialise the `B3.call` function without its Staged Block. The generated `twice1` would then include an `else` branch falling back to the original `f.call(...)`.
+    ]
+  ]
+)
+
+= Inlining
+
+== Inlining
+
+A typical module after Dynamic Staging will look like the following.
+
+#v(1em)
 
 #columns(2)[
+  #set text(size: 0.9em)
+  *Dynamic Staging Output*
   ```js
   module M with
-    fun f(b) =
-      let m, tmp1, tmp2
-      tmp1 = new B1(2)
-      tmp2 = new B2(3)
-      m = pick1(tmp1, tmp2, b)
-      twice1(m)
-    fun pick1(x, y, b) =
-      if b then new B1(2) else new B2(3)
+    fun pow_Dyn_Lit1(x) =
+      let {tmp, tmp1}
+      x
+    fun pow_Dyn_Lit2(x) =
+      let {tmp, tmp1}
+      tmp = 1
+      tmp1 = pow_Dyn_Lit1(x)
+      *(x, tmp1)
   ```
 
   #colbreak()
 
   ```js
-    fun twice1(f) =
-      let tmp
-      if f is
-        B1 then tmp = f.call1()
-        B2 then tmp = f.call1()
-      if f is
-        B1 then f.call2(tmp)
-        B2 then f.call2(tmp)
-  ```
-
-  #colbreak() 
-
-  ```js
-  class B1(y) with
-    fun call1() = 9
-    fun call2(x) =
-      let tmp
-      tmp = x + 2
-      tmp + 2
-
-  class B2(y) with
-    fun call1() = 8
-    fun call2(x) = x + 3
+    fun pow_Dyn_Lit3(x) =
+      let {tmp, tmp1}
+      tmp = 2
+      tmp1 = pow_Dyn_Lit2(x)
+      *(x, tmp1)
   ```
 ]
 
+#pagebreak()
+
+During *the second stage of compilation*, we utilize the MLscript compiler's existing inlining capabilities to inline function calls, as recursion has been eliminated during dynamic staging.
+
+#align(center)[
+  #set text(size: 0.75em)
+  #align(left)[
+    ```javascript
+    let x, inlinedVal, tmp1, x1, inlinedVal1, tmp11, x2, inlinedVal2;
+    x = 2;
+    x1 = x;
+    x2 = x1;
+    inlinedVal2 = x2;
+    tmp11 = inlinedVal2;
+    inlinedVal1 = x1 * tmp11;
+    tmp1 = inlinedVal1;
+    inlinedVal = x * tmp1;
+    return inlinedVal
+    ```
+  ]
+]
+
+= Printing Staged Block
 
 == Printing Staged Block
 
