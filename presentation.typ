@@ -557,111 +557,68 @@ class Block with
 
 For any Scala Block data, we can recreate the same structure within MLscript which we called #strong([Staged Block]).
 
-
-#pagebreak()
-
-  ```js fun pow(x, n) = if n is 0 then 1 else x * pow(x, n-1) ```
-
-  #text(0.8em)[
-
-  #alternatives[
-  ```scala
-  val pow = Symbol("pow"); val x = Symbol("x"); val n = Symbol("n")
-  val t1 = Symbol("tmp"); val t2 = Symbol("tmp")
-  val sub = Symbol("-"); val mul = Symbol("*")
-  FunDefn(pow, [x, n], Scoped(HashSet(t1, t2), Match(Ref(n),
-    [[ Lit(0), Return(Lit(1)) ]],
-    Assign(t1, Call(sub, [n, Lit(1)]), 
-      Assign(t2, Call(pow, [x, t1]), 
-        Return(Call(mul, [x, t2]))
-      )
-    ), End())
-  ))
-  ```][
-    ```js
-    let pow = Symbol("pow"); let x = Symbol("x"); let n = Symbol("n")
-    let t1 = Symbol("tmp"); let t2 = Symbol("tmp")
-    let sub = Symbol("-"); let mul = Symbol("*")
-    FunDefn(pow, [x, n], Scoped([t1, t2], Match(Ref(n),
-      [[ Lit(0), Return(Lit(1)) ]],
-      Assign(t1, Call(sub, [n, Lit(1)]), 
-        Assign(t2, Call(pow, [x, t1]), 
-          Return(Call(mul, [x, t2]))
-        )
-      ), End())
-    ))
-    ```
-  ]
-  
-  ]
-
-  As long as we have the corresponding constructor, we can copy over the structure to the Staged Block.
-
+Reduce the coupling of shape propagation logic to Scala Block.
 
 // some simple base cases
 #pagebreak()
 
-  We perform structural induction to stage each type of Scala Block.
+As long as we have the corresponding constructor, we can copy over the structure to the Staged Block.
 
-  #columns(2)[
-    ```js Value.Lit(lit)```
+We perform structural induction to stage each type of Scala Block.
 
-    #local(number-format: none, [
-    ```js
-    ValueLit(lit)
-    ```
-    ])
+#columns(2)[
+  ```js Value.Lit(true)```
 
-    Example: `1` $mapsto$ ```js ValueLit(1)```
+  #local(number-format: none, [
+  ```js
+  ValueLit(true)
+  ```
+  ])
 
-    #colbreak()
+  #colbreak()
 
-    #alternatives[
+  #alternatives[
 
-    ```js Symbol(name)```
-    #local(number-format: none, [
-    ```js
-    Symbol(name)
-    ```
-    ])
+  ```js Symbol("x")```
+  #local(number-format: none, [
+  ```js
+  Symbol("x")
+  ```
+  ])
 
-    Example:
-    - `x` $mapsto$ ```js Symbol("x")```
-    - `C` $mapsto$ ...?
+  Example:
+  - ```js ClassSymbol("C")``` $mapsto$ ...?
 
-    This is not enough for staging symbols. We'll revisit this case later on.
-    ][
-    ```js Value.Ref(sym)```
-
-    #local(number-format: none, highlights: (
-      (line: 1, start: 9, fill: blue),
-    ), [
-    ```js
-    let l = sym
-    ValueRef(l)
-    ```
-    ])
-    
-    Example: `x` $mapsto$ ```js ValueRef(Symbol("x"))```
-    ]
-  ]
-  
-  #only("2-")[
-  ```js Select(qual, name)```
+  This is not enough for staging symbols. We'll revisit this case later on.
+  ][
+  ```js Value.Ref(Symbol("x"))```
 
   #local(number-format: none, highlights: (
     (line: 1, start: 9, fill: blue),
-    (line: 2, start: 9, fill: blue),
   ), [
   ```js
-  let q = qual
-  let n = name
-  Select(q, n)
+  let l = Symbol("x")
+  ValueRef(l)
   ```
   ])
   
-  Example: `x.p` $mapsto$ ```js Select(ValueRef(Symbol("x")), Symbol("p"))```
   ]
+]
+
+#only("2-")[
+```js Select(Value.Ref(Symbol("x")), Tree.Ident("p"))```
+
+#local(number-format: none, highlights: (
+  (line: 1, start: 9, fill: blue),
+  (line: 2, start: 9, fill: blue),
+), [
+```js
+let q = Value.Ref(Symbol("x"))
+let n = Tree.Ident("p")
+Select(q, n)
+```
+])
+]
 
 
 #pagebreak()
@@ -686,20 +643,19 @@ For any Scala Block data, we can recreate the same structure within MLscript whi
 
 #alternatives-match((
   "1": [
-  - We need more information about the Symbol in the original stage
+  - Keep track of current value in Staged Block
 
     // for shape propagation
     Add reference to current value in the symbol
     
-    ```js C.x```
-    ```js
+    ```js Select(Value.Ref(ClassSymbol("C")), Tree.Ident("x"))```
+    ```js 
     let CSym = ClassSymbol("C", C)
     Select(ValueRef(CSym), Symbol("x"))
     ```
 
     Add redirection within current stage to allow access for next stage
 
-    // we might use import magic to import the module directly instead of using the module itself
     ```js
     staged class A with
       fun f() = M.f()
@@ -714,7 +670,9 @@ For any Scala Block data, we can recreate the same structure within MLscript whi
   "2": [
     For local symbols, we can maintain a map during staging to reuse a staged symbol.
 
-    ```js x + x```
+    ```js
+    x + x
+    ```
     ```js
     let x = Symbol("x")
     // let x1 = Symbol("x")
@@ -722,7 +680,7 @@ For any Scala Block data, we can recreate the same structure within MLscript whi
     ```
   ],
   "3": [
-    For class and module symbols, we need to cache and use first instance of a symbol within the staged code.
+    For class and module symbols, we need to cache and use first instance of a symbol within the current runtime.
 
     ```js M.f()```
     ```js
