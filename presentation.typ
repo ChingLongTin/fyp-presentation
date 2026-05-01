@@ -997,7 +997,7 @@ After propagation, the call site `pyth(2, 3)` is rewritten to its cached variant
 
   #text(fill: luma(110), style: "italic")[Cache] \
   #v(0.3em)
-  #set text(size: 0.85em)
+  #set text(size: 0.8em)
   #table(
     columns: (auto, auto, auto),
     stroke: 0.4pt + luma(180),
