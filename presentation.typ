@@ -27,6 +27,9 @@
 
 = Motivation
 
+== Partial Evaluation
+
+
 == Multi-Stage Programming
 Well-known optimization technique @taha2004gentle
 
@@ -123,28 +126,29 @@ In here, green annotates code to be executed in the next stage, and gray execute
 == Class specialization
 
 #columns(2)[
-#local(lang-format: (_, _, _) => [],
-```js
-class B(val x) with
-  fun f() = ...
-// ...
-if x is
-  1 then new D1(1)
-  2 then new D2(2)
+  #local(lang-format: (_, _, _) => [],
+  ```js
+  class B(val x) with
+    fun f() = ...
+  class D1(val x) extends B with
+  // ...
+  if x is
+    1 then new D1(1)
+    2 then new D2(2)
 
-x.f()
-```
-)
+  x.f()
+  ```
+  )
 
-#colbreak()
+  #colbreak()
 
-#codly(skips: ((1, 7), ))
-```js
-if x is
-  D1 then x.D1_f1()
-  D2 then x.D2_f1()
-  D3 then x.D3_f1()
-```
+  #codly(skips: ((1, 7), ))
+  ```js
+  if x is
+    D1 then x.D1_f1()
+    D2 then x.D2_f1()
+    D3 then x.D3_f1()
+  ```
 ]
 
 Traditional Multi-Stage Programming tracks types.
@@ -420,18 +424,42 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
 
 Insert some auxiliary helper variables/functions to the module for shape propagation.
 
-```js
-staged module Math with
-  val funCache = new Map()
-  val generatorMap = new Map([["pow", pow_gen]])
-  fun pow_staged() = ...
-  fun pow_gen(x, n) =
-    specialize(funCache, "f", pow_staged, [x, n])
-  fun propagate() = 
-    let dyn = ...
-    pow_gen(dyn, dyn)
-    sq_gen(dyn)
-```
+#alternatives[
+  ```js
+  staged module Math with
+    val funCache = new Map()
+    val generatorMap = new Map([["pow", pow_gen]])
+    fun pow_staged() = ...
+    fun pow_gen(x, n) =
+      specialize(funCache, "f", pow_staged, [x, n])
+    fun propagate() = 
+      let dyn = ...
+      pow_gen(dyn, dyn)
+      sq_gen(dyn)
+  ```
+][
+  Memoization is based on @swadi2006monadic.
+  ```js
+  staged module Math with
+    val funCache // memoize specialized functions
+    val generatorMap // point to generator function
+    fun pow_staged() // return staged version of the function
+    fun pow_gen(x, n) // redirect to shape propagation
+    fun propagate() // generates all entry functions
+  ```
+]
+
+#slide[
+  For staged classes, we can treat the parameters of the class as the function parameter, then specialize the functions as usual.
+  ```js
+  staged class C(x, y) with
+    fun add() = x + y
+  ```
+  ```js
+  staged module C with
+    fun add(cls)() = cls.x + cls.y
+  ```
+]
 
 == Shape Propagation
 
@@ -517,10 +545,14 @@ Those act as points that the user can call the staged module with. Other special
 
 == Model-View-Projection transformation
 
+Matrix multiplication, where certain values within the matrix may be known
+
 basically we're pretty good at partially evaluating matrices ^w^.
 
 Time: about 2x (from 2s to 1s, eh...)
 
 Code size: don't worry about it, we'll just do lifting
+
+// == Regex, for staged class stuff i suppose 
 
 #slide[#bibliography("ref.bib")]
