@@ -59,7 +59,7 @@ Programmers often write code in a clear, general style, even when parts of it co
 
   #colbreak()
 
-  *can actually be written as*
+  *... can actually be written as*
   ```js
   fun dotWith3(v) = v.(0) + 2 * v.(2)
   ```
@@ -73,11 +73,6 @@ The recursion, the pattern matching, the multiplication are all known at compile
   width: 100%,
   [*Goal:* let the programmer keep the abstract version, and have the compiler peel away the static layer automatically.]
 )
-
-
-
-
-
 
 = Literature Survey
 
@@ -104,7 +99,6 @@ fun power2 = .! .<(x => .~(power(2, .<x>.)))>.
 
 In here, green annotates code to be executed in the next stage, and gray executed in the current stage.
 
-
 #pagebreak()
 
 #local(number-format: none, lang-format: (_, _, _) => [], [
@@ -120,9 +114,7 @@ In here, green annotates code to be executed in the next stage, and gray execute
   ```
 
   During evaluation, we able to pre-compute certain parts of the code, reducing runtime.
-
 ])
-
 
 #pagebreak()
 
@@ -175,34 +167,57 @@ x => x * x * 1
 fun power2 = x => x * x * 1
 ```
 
+#pagebreak()
 
+== Linking Rewriting DSLs
+
+Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
+
+
+#v(0.5em)
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+  width: 100%,
+  [*Drawback:* The annotations need to be manually added, and so the library designer needs to anticipate uses of the library.]
+)
+
+#v(0.5em)
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+  width: 100%,
+  [*Improvement:* Code fragments are evaluated separately, when the result of a code fragment may be reused.]
+)
 
 == Class specialization
 
 #columns(2)[
-#local(lang-format: (_, _, _) => [],
-```js
-class B(val x) with
-  fun f() = ...
-// ...
-if x is
-  1 then new D1(1)
-  2 then new D2(2)
+  #local(lang-format: (_, _, _) => [],
+  highlights: ((line: 9, start: 0, fill: yellow),),
+  ```js
+  class B(val x) with
+    fun f() = ...
+  class D1(val x) extends B with
+  // ...
+  if x is
+    1 then new D1(1)
+    2 then new D2(2)
 
-x.f()
-```
-)
+  x.f()
+  ```
+  )
 
-#colbreak()
+  #colbreak()
 
-#codly(skips: ((1, 7), ))
-```js
-if x is
-  D1 then x.D1_f1()
-  D2 then x.D2_f1()
-  D3 then x.D3_f1()
-```
+  #codly(skips: ((1, 7), ))
+  ```js
+  if x is
+    D1 then x.D1_f1()
+    D2 then x.D2_f1()
+    D3 then x.D3_f1()
+  ```
 ]
+
+#pagebreak()
 
 Traditional Multi-Stage Programming tracks types.
 
@@ -218,25 +233,32 @@ if new Foo(1, 2) is
   Bar(x, y) then ...
 ```
 
+== First Class Functions
+
+```js
+
+```
+
+#pagebreak()
+
 Under single inheritance, matching arms runs into problems. @shali2011hybrid
-
-(Class splitting)
-// https://www.cs.tufts.edu/comp/150FP/archive/william-cook/hybrid-partial-eval.pdf for second approach
-
 
 ```js
 class Foo$1$2 extends Bar
 class Bar$2$3
 ```
 
-
-
-
+#v(0.5em)
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+  width: 100%,
+  [*Drawback:* Either we perform class splitting, or we do not specialize inherited classes.]
+)
 
 
 = Overview
 
-== Approach in High Level
+== High-Level Approach
 
 #pagebreak()
 
@@ -271,7 +293,7 @@ The output of executing the program is
 ```js
 module M with
   fun dotWith3(v) = v.(0) + 2 * v.(2)
-  ... with more specialized functions ...
+  // ... with more specialized functions ...
 ```
 
 which the user can import.
@@ -295,7 +317,6 @@ Two phases: Instrumentation / Insert Optimizer
 === Lowering Pass
 
 We implement staging a transformation from Scala Block $=>$ Scala Block.
-// TODO
 
 #pagebreak()
 
@@ -426,11 +447,11 @@ print(
 ])
 ]]
 
-
-
-
-
 = Staging
+
+== Function-to-Class Transformation
+
+Simplify lambda functions by turning them into classes
 
 == Staging Block
 
@@ -631,18 +652,42 @@ For any Scala Block data, we can recreate the same structure within MLscript whi
 
 Insert some auxiliary helper variables/functions to the module for shape propagation.
 
-```js
-staged module Math with
-  val funCache = new Map()
-  val generatorMap = new Map([["pow", pow_gen]])
-  fun pow_staged() = ...
-  fun pow_gen(x, n) =
-    specialize(funCache, "f", pow_staged, [x, n])
-  fun propagate() = 
-    let dyn = ...
-    pow_gen(dyn, dyn)
-    sq_gen(dyn)
-```
+#alternatives[
+  ```js
+  staged module Math with
+    val funCache = new Map()
+    val generatorMap = new Map([["pow", pow_gen]])
+    fun pow_staged() = ...
+    fun pow_gen(x, n) =
+      specialize(funCache, "f", pow_staged, [x, n])
+    fun propagate() = 
+      let dyn = ...
+      pow_gen(dyn, dyn)
+      sq_gen(dyn)
+  ```
+][
+  Memoization is based on @swadi2006monadic.
+  ```js
+  staged module Math with
+    val funCache // memoize specialized functions
+    val generatorMap // point to generator function
+    fun pow_staged() // return staged version of the function
+    fun pow_gen(x, n) // redirect to shape propagation
+    fun propagate() // generates all entry functions
+  ```
+]
+
+#slide[
+  For staged classes, we can treat the parameters of the class as the function parameter, then specialize the functions as usual.
+  ```js
+  staged class C(x, y) with
+    fun add() = x + y
+  ```
+  ```js
+  staged module C with
+    fun add(cls)() = cls.x + cls.y
+  ```
+]
 
 #let shape(s) = box[⟦#raw(s)⟧]
 
@@ -1818,14 +1863,14 @@ After propagation, the residual `M` and the residual classes contain:
   ],
   [
     ```js
-      fun twice1(f) =
-        let tmp
-        if f is
-          B1 then tmp = f.call1()
-          B2 then tmp = f.call1()
-        if f is
-          B1 then f.call2(tmp)
-          B2 then f.call2(tmp)
+    fun twice1(f) =
+      let tmp
+      if f is
+        B1 then tmp = f.call1()
+        B2 then tmp = f.call1()
+      if f is
+        B1 then f.call2(tmp)
+        B2 then f.call2(tmp)
     ```
     
     #v(1em)
@@ -1926,17 +1971,26 @@ This is a similar process to staging, but done in reverse.
 
 As before, we need extra care when handling symbols.
 
+```js
+import "../M.mls"
 
-// = Testing
-
-// relevant? there's nothing really notable compared to ordinary MLscript development (diff/compile tests are already features within it)
-
+```
 
 = Benchmarking
 
 == Model-View-Projection transformation
 
-basically we're pretty good at partially evaluating matrices ^w^.
+Used in 3D rendering
+
+$ arrow(v) = M V P dot arrow(u) $
+
+Evaluate matrix multiplications when the matrices are known values.
+
+Benchmark: Transform 16k random coordinates using a known transformation matrices
+
+=== Time
+
+Unstaged: ~2s
 
 Time: about 2x (from 2s to 1s, eh...)
 
