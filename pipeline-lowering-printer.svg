@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 300" font-family="sans-serif" xml:space="preserve">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L0,8 L10,4 z" fill="#555"/>
+    </marker>
+    <marker id="ah" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L0,8 L10,4 z" fill="#e08020"/>
+    </marker>
+    <style>
+      .mono { font-family: Menlo, Consolas, monospace; font-size: 30px; }
+      .ttl  { font-weight: bold; font-size: 32px; }
+      .lbl  { font-size: 22px; font-style: italic; fill: #555; }
+      .row  { font-weight: bold; font-size: 27px; fill: #444; }
+      .hl   { stroke: #e08020; stroke-width: 3; fill: none; }
+      text  { font-size: 26px; }
+    </style>
+  </defs>
+
+  <text x="20" y="24" class="row">Dynamic Staging</text>
+  <line x1="20" y1="32" x2="1620" y2="32" stroke="#bbb" stroke-dasharray="4,3"/>
+
+  <rect x="20"   y="44" width="200" height="64" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="120"  y="84" text-anchor="middle">Instrumentation</text>
+
+  <rect x="390"  y="44" width="220" height="64" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="500"  y="84" text-anchor="middle">Insert Optimizer</text>
+
+  <rect x="810"  y="44" width="180" height="64" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="900"  y="84" text-anchor="middle">Insert Printer</text>
+
+  <rect x="1180" y="44" width="170" height="64" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="1265" y="70" text-anchor="middle">Compile &amp;</text>
+  <text x="1265" y="100" text-anchor="middle">Execute</text>
+
+  <rect x="1420" y="44" width="200" height="64" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
+  <text x="1520" y="84" text-anchor="middle" font-size="22">MLS Output</text>
+
+  <line x1="220"  y1="76" x2="388"  y2="76" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="304"  y="64" text-anchor="middle" class="lbl">Staged Block</text>
+
+  <line x1="610"  y1="76" x2="808"  y2="76" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="709"  y="64" text-anchor="middle" class="lbl">Opt(Staged Block)</text>
+
+  <line x1="990" y1="76" x2="1178" y2="76" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="1084" y="64" text-anchor="middle" class="lbl">Print(Opt(St. Blk))</text>
+
+  <line x1="1350" y1="76" x2="1418" y2="76" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <path d="M 840 222 L 840 160 L 120 160 L 120 108" fill="none" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <text x="20" y="204" class="row">Compilation</text>
+  <line x1="20" y1="212" x2="1620" y2="212" stroke="#bbb" stroke-dasharray="4,3"/>
+
+  <rect x="20"   y="226" width="180" height="56" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
+  <text x="110"  y="262" text-anchor="middle">MLS Input</text>
+  <line x1="200" y1="254" x2="258" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <rect x="260"  y="226" width="160" height="56" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="340"  y="262" text-anchor="middle">Parser</text>
+  <line x1="420" y1="254" x2="478" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <rect x="460"  y="226" width="160" height="56" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="540"  y="262" text-anchor="middle">Elaborator</text>
+  <line x1="620" y1="254" x2="718" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="669" y="244" text-anchor="middle" class="lbl">Term</text>
+
+  <rect x="720"  y="222" width="240" height="64" rx="6" fill="#fff3cd" stroke="#e6a800" stroke-width="1.6"/>
+  <text x="840"  y="262" text-anchor="middle" font-weight="bold">Lowering</text>
+  <line x1="960" y1="254" x2="1058" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="1009" y="244" text-anchor="middle" class="lbl">Block</text>
+
+  <rect x="1060" y="226" width="140" height="56" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="1130" y="262" text-anchor="middle">Codegen</text>
+  <line x1="1200" y1="254" x2="1238" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+
+  <rect x="1240" y="226" width="180" height="56" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
+  <text x="1330" y="262" text-anchor="middle">JS Output</text>
+  <line x1="990" y1="76" x2="1178" y2="76" class="hl" marker-end="url(#ah)"/>
+
+</svg>
