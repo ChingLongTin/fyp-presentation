@@ -83,7 +83,7 @@ The recursion, the pattern matching, the multiplication are all known at compile
 
 == Monomorphism
 
-Specialized, efficient versions of a function are created from a template function.
+Specialised, efficient versions of a function are created from a template function.
 ```rs
 use std::ops::Mul;
 fn f<T: Mul<Output=T>>(x: T, y: T) -> T {
@@ -109,7 +109,7 @@ fn main() {
 ```
 
 #callout([Drawback], [
-  We are unable to specialize a function on the specific values on the arguments.
+  We are unable to specialise a function on the specific values on the arguments.
 ])
 
 Rust allows for restricted constant generics, which is limited.
@@ -317,7 +317,7 @@ class Bar$2$3
 
 #v(0.5em)
 #callout([Drawback],[
-  Either we perform class splitting, or we do not specialize inherited classes.
+  Either we perform class splitting, or we do not specialise inherited classes.
 ])
 
 
@@ -358,12 +358,12 @@ The output of executing the program is
 ```js
 module M with
   fun dotWith3(v) = v.(0) + 2 * v.(2)
-  // ... with more specialized functions ...
+  // ... with more specialised functions ...
 ```
 
 which the user can import.
 
-Hence, our approach is a combination of *metaprogramming* (code generator) and *specialization* (generation of specialized functions).
+Hence, our approach is a combination of *metaprogramming* (code generator) and *specialization* (generation of specialised functions).
 
 == MLscript Compiler
 
@@ -722,7 +722,7 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
     val generatorMap = new Map([["pow", pow_gen]])
     fun pow_staged() = ...
     fun pow_gen(x, n) =
-      specialize(funCache, "f", pow_staged, [x, n])
+      specialise(funCache, "f", pow_staged, [x, n])
     fun propagate() = 
       let dyn = ...
       pow_gen(dyn, dyn)
@@ -732,7 +732,7 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
   Memoization is based on @swadi2006monadic.
   ```js
   staged module Math with
-    val funCache // memoize specialized functions
+    val funCache // memoize specialised functions
     val generatorMap // point to generator function
     fun pow_staged() // return staged version of the function
     fun pow_gen(x, n) // redirect to shape propagation
@@ -741,7 +741,7 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
 ]
 
 #slide[
-  For staged classes, we can treat the parameters of the class as the function parameter, then specialize the functions as usual.
+  For staged classes, we can treat the parameters of the class as the function parameter, then specialise the functions as usual.
   ```js
   staged class C(x, y) with
     fun add() = x + y
@@ -1072,7 +1072,7 @@ When $f$ is *staged*, we recursively specialise its body on the argument shapes.
       fun test() = pyth(2, 3)
     ```
   )
-  Specialise $"pyth"_"gen" thin (⟦2⟧, ⟦3⟧)$ $arrow$ produces `pyth_Lit2_Lit3() = 13`, shape $⟦13⟧$. The specialized function will be saved to the cache.\
+  Specialise $"pyth"_"gen" thin (⟦2⟧, ⟦3⟧)$ $arrow$ produces `pyth_Lit2_Lit3() = 13`, shape $⟦13⟧$. The specialised function will be saved to the cache.\
   Conclusion: $epsilon tack.r "pyth"(2,3) ~> 13 => ⟦13⟧$
 ]
 
@@ -1536,7 +1536,7 @@ $"rest"$ removes shapes already covered by a match pattern.
 
 === Non Termination 1
 
-Consider fibonacci number:
+Consider Fibonacci number:
 
 ```js
 staged module Staged with
@@ -1691,7 +1691,7 @@ Combining `filter`, `rest`, dead branch elimination and `decay` yields the follo
 
 
 == Staged Class
-Similar to staging module, we can stage classes as well, where we specializes on its method, with the main difference being dynamic dispatching `x.f()`.
+Similar to staging module, we can stage classes as well, where we specialises on its method, with the main difference being dynamic dispatching `x.f()`.
 
 #local(lang-format: (_, _, _) => [],
 ```js
@@ -2008,7 +2008,9 @@ During *the second stage of compilation*, we utilize the MLscript compiler's exi
 
 #pagebreak()
 
-After all the specialized functions are completed, we need to write the functions to a new file.
+After all the specialised functions are completed, we need to write the functions to a new file.
+
+We do not export the specialised functions, in order to activate the inliner for the specialised functions.
 
 // FIXME: use the real example of power instead of an arbitrary module?
 ```js
@@ -2062,7 +2064,7 @@ Code size: don't worry about it, we'll just do lifting
 
 /*
 
-  What happens when other staged modules want to access these private specialized functions? We just forbid specializing then.
+  What happens when other staged modules want to access these private specialised functions? We just forbid specializing then.
 
   Those act as points that the user can call the staged module with. Other specialized functions are there too but they're mine. You can't touch them. I'm not even going to export them for you to access.
 
