@@ -252,9 +252,7 @@ module M with
 
 #pagebreak()
 
-Mark it as `staged`: the module now acts as a *code generator*:
-at compile time it specialises calls on known argument shapes and emits
-a residual module containing only the work that depends on runtime input.
+Users can mark a module as `staged` which turns the module into a *code generator*. When we execute the program, it emits a new residual module instead of executing the program.
 
 #codly(highlights: ((line: 1, start: 1, end: 6, fill: yellow),))
 ```js
@@ -268,15 +266,15 @@ staged module M with
 
 #pagebreak()
 
-After staging,
-We are left with an ordinary (non-staged) module containing just
-the residual program that the user can use
+The output of executing the program is
 
 ```js
 module M with
   fun dotWith3(v) = v.(0) + 2 * v.(2)
   ... with more specialized functions ...
 ```
+
+which the user can import.
 
 Hence, our approach is a combination of *metaprogramming* (code generator) and *specialization* (generation of specialized functions).
 
