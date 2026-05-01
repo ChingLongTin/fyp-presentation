@@ -81,28 +81,78 @@ The recursion, the pattern matching, the multiplication are all known at compile
 
 = Literature Survey
 
-== Multi-Stage Programming
-Well-known optimization technique @taha2004gentle
+== Monomorphism
 
-#codly(highlights: (
-  (line: 2, start: 12, end: 12, fill: green),
-  (line: 3, start: 10, end: 34, fill: green, inset: (top: 0em, bottom: 0em)),
-  (line: 3, start: 12, end: 12, fill: gray),
-  (line: 3, start: 19, end: 33, fill: gray),
-  (line: 4, start: 20, end: 44, fill: green, inset: (top: 0em, bottom: 0em)),
-  (line: 4, start: 28, end: 43, fill: gray, inset: (top: 0em, bottom: 0em)),
-  (line: 4, start: 39, end: 39, fill: green),
-))
-#local(lang-format: (_, _, _) => [],
-```js
-fun power(n, x) = if n is
-  0 then .<1>. 
-  else .<.~x * .~(power(n - 1, x))>.
-fun power2 = .! .<(x => .~(power(2, .<x>.)))>.
+Specialized, efficient versions of a function are created from a template function.
+```rs
+use std::ops::Mul;
+fn f<T: Mul<Output=T>>(x: T, y: T) -> T {
+  x * y
+}
+
+fn main() {
+  // uses built-in *
+  f(1, 2);
+  f(1.3, 4.5);
+}
 ```
-)
 
-In here, green annotates code to be executed in the next stage, and gray executed in the current stage.
+```rs
+fn f1(x: i32, y: i32) -> i32 { x * y }
+fn f2(x: f32, y: f32) -> f32 { x * y }
+
+fn main() {
+  // uses built-in *
+  f1(1, 2);
+  f2(1.3, 4.5);
+}
+```
+
+#callout([Drawback], [
+  We are unable to specialize a function on the specific values on the arguments.
+])
+
+Rust allows for restricted constant generics, which is limited.
+// because it's more programmer work
+
+== Multi-Stage Programming
+
+Well-known optimization technique, subfield of Partial Evaluation.
+
+Example from @taha2004gentle:
+
+#alternatives[
+  #local(lang-format: (_, _, _) => [],
+  ```js
+  fun power(n, x) = if n is
+    0 then 1 
+    else x * power(n - 1, x)
+  fun power2(x) = power(2, x)
+  ```
+  )
+][
+  #codly(highlights: (
+    (line: 2, start: 12, end: 12, fill: green),
+    (line: 3, start: 10, end: 34, fill: green, inset: (top: 0em, bottom: 0em)),
+    (line: 3, start: 12, end: 12, fill: gray),
+    (line: 3, start: 19, end: 33, fill: gray),
+    (line: 4, start: 20, end: 44, fill: green, inset: (top: 0em, bottom: 0em)),
+    (line: 4, start: 28, end: 43, fill: gray, inset: (top: 0em, bottom: 0em)),
+    (line: 4, start: 39, end: 39, fill: green),
+  ))
+  #local(lang-format: (_, _, _) => [],
+  ```js
+  fun power(n, x) = if n is
+    0 then .<1>. 
+    else .<.~x * .~(power(n - 1, x))>.
+  fun power2 = .! .<(x => .~(power(2, .<x>.)))>.
+  ```
+  )
+  
+  Here, green annotates code to be executed in the next stage, and gray executed in the current stage.
+]
+
+
 
 #pagebreak()
 
@@ -117,9 +167,15 @@ In here, green annotates code to be executed in the next stage, and gray execute
   ```js
   .! x = .! x = x
   ```
-
-  During evaluation, we able to pre-compute certain parts of the code, reducing runtime.
 ])
+
+Analogous to `eval`:
+
+```py
+eval("eval(\"1\")") = eval("1") = 1
+```
+
+During evaluation, we able to pre-compute certain parts of the code, reducing runtime.
 
 #pagebreak()
 
@@ -174,12 +230,6 @@ fun power2 = x => x * x * 1
 
 #pagebreak()
 
-== Linking Rewriting DSLs
-
-Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
-
-
-#v(0.5em)
 #callout([Drawback],[
   The annotations need to be manually added, and so the library designer needs to anticipate uses of the library.
 ])
@@ -189,24 +239,34 @@ Improve the compilation of functions with domain-specific modules. @parreaux2017
 ])
 
 #codly(highlights: (
-  (line: 1, start: 23, end: 47, fill: green),
-  (line: 1, start: 31, end: 46, fill: gray),
-  (line: 1, start: 43, end: 43, fill: green),
+  (line: 1, start: 21, end: 45, fill: green),
+  (line: 1, start: 29, end: 44, fill: gray),
+  (line: 1, start: 41, end: 41, fill: green),
 ))
 ```js
-fun power10() = .! .<(x => .~(power(10, .<x>.)))>.
+fun power10 = .! .<(x => .~(power(10, .<x>.)))>.
 ```
+
+See memoization of code fragments in @swadi2006monadic.
+
+== Linking Rewriting DSLs
+
+// TODO
+Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
+
 
 == Class specialization
 
 #columns(2)[
   #local(lang-format: (_, _, _) => [],
-  highlights: ((line: 9, start: 0, fill: yellow),),
+  highlights: ((line: 11, start: 0, fill: yellow),),
   ```js
   class B(val x) with
     fun f() = ...
-  class D1(val x) extends B with
-  // ...
+  class D1(val x) extends B
+  class D2(val x) extends B
+  class D3(val x) extends B
+  // in a code fragment...
   if x is
     1 then new D1(1)
     2 then new D2(2)
@@ -219,14 +279,14 @@ fun power10() = .! .<(x => .~(power(10, .<x>.)))>.
 
   Traditional MSP tracks types.
   
-  Even if `x` has a known class shape, we cannot remove matching arms.
-  
   We know that `x : B`, but we do not know which specific derived class of `B` are used.
+  
+  Even if `x` has a known class shape, we cannot remove matching arms.
 ]
 
 #pagebreak()
 
-#codly(skips: ((1, 7), ))
+#codly(skips: ((1, 10), ))
 ```js
 if x is
   D1 then x.D1_f1()
@@ -247,14 +307,7 @@ if new Foo(1, 2) is
   Bar(x, y) then ...
 ```
 
-== First Class Functions
-
-```js
-
-```
-
-#pagebreak()
-
+// TODO: read the paper
 Under single inheritance, matching arms runs into problems. @shali2011hybrid
 
 ```js
@@ -314,6 +367,8 @@ Hence, our approach is a combination of *metaprogramming* (code generator) and *
 
 == MLscript Compiler
 
+Written in Scala
+
 #align(center)[#image("pipeline-overview.svg", width: 95%)]
 - Lexer/Parser: converts source code into AST
 - Elaborator/Resolver: Deal with references
@@ -324,11 +379,7 @@ Hence, our approach is a combination of *metaprogramming* (code generator) and *
 
 #align(center)[#image("pipeline-lowering.svg", width: 100%)]
 
-Two phases: Instrumentation / Insert Optimizer
-
-=== Lowering Pass
-
-We implement staging a transformation from Scala Block $=>$ Scala Block.
+Two phases: Instrumentation / Execute Optimizer
 
 #pagebreak()
 
