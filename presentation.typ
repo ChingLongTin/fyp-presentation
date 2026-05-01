@@ -187,74 +187,33 @@ Improve the compilation of functions with domain-specific modules. @parreaux2017
   width: 100%,
   [*Improvement:* Code fragments are evaluated separately, when the result of a code fragment may be reused.]
 )
-
-== Class Specialization
+== Hybrid Partial Evaluation @shali2011hybrid 
 
 #columns(2)[
   #local(lang-format: (_, _, _) => [],
-  highlights: ((line: 9, start: 0, fill: yellow),),
   ```js
-  class B(val x) with
-    fun f() = ...
-  class D1(val x) extends B with
-  // ...
-  if x is
+  class D1(val x)
+  class D2(val x)
+  let y = if x is
     1 then new D1(1)
     2 then new D2(2)
-
-  x.f()
+  y.f()
   ```
   )
 
   #colbreak()
-
-  #codly(skips: ((1, 7), ))
-  ```js
-  if x is
-    D1 then x.D1_f1()
-    D2 then x.D2_f1()
-    D3 then x.D3_f1()
-  ```
+  #block(
+    fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%
+  )[
+    *Limitation:* Hybrid Partial Evaluation lacks *disjunctive class shapes* (e.g., #box[⟦#raw("D1(..)") $union$ #raw("D2(..)")⟧]), so `y.f()` cannot be specialized.
+  ]
 ]
-
-#pagebreak()
-
-Traditional Multi-Stage Programming tracks types.
-
-Even if `x` has a known class shape, we cannot remove matching arms.
-
-Specialization is done through typing, so we know that
-`x : B`, but we do not know which specific derived class of `B` is used.
-
-```js
-data class Foo(x, y) extends Bar(x+1, y+1)
-
-if new Foo(1, 2) is
-  Bar(x, y) then ...
-```
 
 == First Class Functions
 
 ```js
 
 ```
-
-#pagebreak()
-
-Under single inheritance, matching arms runs into problems. @shali2011hybrid
-
-```js
-class Foo$1$2 extends Bar
-class Bar$2$3
-```
-
-#v(0.5em)
-#block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
-  width: 100%,
-  [*Drawback:* Either we perform class splitting, or we do not specialize inherited classes.]
-)
-
 
 = Overview
 
@@ -2026,13 +1985,16 @@ A typical module after Dynamic Staging would look like the following:
 
   #colbreak()
 
-  ```js
-    fun pow_Dyn_Lit3(x) =
-      let {tmp, tmp1}
-      tmp = 2
-      tmp1 = pow_Dyn_Lit2(x)
-      *(x, tmp1)
-  ```
+  #[
+    #codly(offset: 9)
+    ```js
+      fun pow_Dyn_Lit3(x) =
+        let {tmp, tmp1}
+        tmp = 2
+        tmp1 = pow_Dyn_Lit2(x)
+        *(x, tmp1)
+    ```
+  ]
 ]
 
 #pagebreak()
@@ -2113,6 +2075,8 @@ Evaluate matrix multiplications when the matrices are known values.
 
 Benchmark: Transform 16k random coordinates using a known transformation matrices
 
+#text(size: 0.85em, fill: luma(110))[Environment: MacBook Pro (13-inch, M1, 2020) with 16 GB RAM]
+
 #v(1em)
 
 #let bar(pct, color, label) = block(width: 100%, height: 1.4em, above: 0pt, below: 0pt)[
@@ -2121,15 +2085,15 @@ Benchmark: Transform 16k random coordinates using a known transformation matrice
 ]
 
 #columns(2)[
-  === Time Taken (ns)
+  === Time Taken (second)
   #v(0.5em)
   #grid(
     columns: (auto, 1fr),
     row-gutter: 1.2em,
     column-gutter: 0.8em,
     align: horizon,
-    [*Before*], bar(100%, luma(220), [1,455,662,542]),
-    [*After*],  bar(38%, rgb("e08020"), [553,668,000]),
+    [*Original*], bar(100%, luma(220), [1.46]),
+    [*Dynamic Staging*],  bar(38%, rgb("e08020"), [0.55]),
   )
 
   #colbreak()
@@ -2141,8 +2105,8 @@ Benchmark: Transform 16k random coordinates using a known transformation matrice
     row-gutter: 1.2em,
     column-gutter: 0.8em,
     align: horizon,
-    [*Before*], bar(24.8%, luma(220), [242]),
-    [*After*],  bar(100%, rgb("e08020"), [975]),
+    [*Original*], bar(24.8%, luma(220), [242]),
+    [*Dynamic Staging*],  bar(100%, rgb("e08020"), [975]),
   )
 ]
 
