@@ -31,12 +31,8 @@
 1. First Class Transformer
 2. Add Formalization to help explaining
 3. Benchmarking
-4. Merging the final to web-demo
-5. Mention the inlining in mlscript for inlining functions to further improve the runtime (benchmark comparison is between inlining vs staging + inlining)
-6. Host the web-demo on github page maybe
-7. Mention the 'stub' thing
-8. Research some more related works.
-9. Explain the motivation why we recreate the Block data structure within MLScript instead of directly manipulating the Scala Block (Maintainability?)
+4. Mention the inlining in mlscript for inlining functions to further improve the runtime (benchmark comparison is between inlining vs staging + inlining)
+5. Research some more related works.
 */
 
 #let callout(name, text) = block(
@@ -111,7 +107,7 @@ fn main() {
   We are unable to specialise a function on the specific values on the arguments.
 ])
 
-Rust allows for restricted constant generics, which is limited.
+Rust allows for constant generics, which is limited.
 // because it's more programmer work
 
 == Multi-Stage Programming
@@ -318,9 +314,6 @@ class Bar$2$3
 #callout([Drawback],[
   Either we perform class splitting, or we do not specialise inherited classes.
 ])
-
-== Functions to Classes
-// TODO
 
 = Overview
 
@@ -536,7 +529,6 @@ print(gen(b))
 
 = Staging
 
-
 == Staging Block
 
 #pagebreak()
@@ -692,9 +684,10 @@ Select(q, n)
 
 == Instrumentation
 
+#focus-slide[A short demo on Instrumentation]
+
 Insert some auxiliary helper variables/functions to the module for shape propagation.
 
-// TODO: DEMO HERE
 
 #alternatives[
   ```js
@@ -710,7 +703,6 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
       sq_gen(dyn)
   ```
 ][
-  Memoization is based on @swadi2006monadic.
   ```js
   staged module Math with
     val funCache // memoize specialised functions
@@ -734,8 +726,6 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
     fun add(cls)() = cls.x + cls.y
   ```
 ]
-
-#focus-slide[A short demo on Instrumentation]
 
 #let shape(s) = box[⟦#raw(s)⟧]
 
@@ -2033,6 +2023,41 @@ After propagation, the residual `M` and the residual classes contain:
   ]
 )
 
+= Printing Staged Block
+
+== Printing Staged Block
+
+After all the specialised functions are completed, we need to write the functions to a new file.
+This is a similar to staging, but done in reverse.
+
+We do not export the specialised functions, in order to activate the inliner for the specialised functions.
+
+#columns(2)[
+  #set text(size: 0.9em)
+  ```js
+  staged module Math with
+    val funCache = new Map([
+      ["pow_Dyn_Lit1", Scoped(...)],
+      ["pow_Dyn_Lit2", Scoped(...)],
+      ["pow", Scoped(...)],
+    ])
+  ```
+
+  #colbreak()
+
+  #text(fill: luma(110), style: "italic")[Printed Output File:]
+  ```js
+  fun pow_Dyn_Lit1(x) = x
+  fun pow_Dyn_Lit2(x) =
+    let {tmp, tmp1}
+    tmp = 1
+    tmp1 = pow_Dyn_Lit1(x)
+    *(x, tmp1)
+  module Math with
+    fun pow(x, n) = ...
+  ```
+]
+
 = Inlining
 
 == Inlining
@@ -2089,57 +2114,11 @@ During *the second stage of compilation*, we utilize the MLscript compiler's exi
   ]
 ]
 
-= Printing Staged Block
-
-== Printing Staged Block
-
-#pagebreak()
-
-After all the specialised functions are completed, we need to write the functions to a new file.
-
-We do not export the specialised functions, in order to activate the inliner for the specialised functions.
-
-#columns(2)[
-  #set text(size: 0.9em)
-  ```js
-  staged module Math with
-    val funCache = new Map([
-      ["pow_Dyn_Lit1", Scoped(...)],
-      ["pow_Dyn_Lit2", Scoped(...)],
-    ])
-  ```
-
-  #colbreak()
-
-  #text(fill: luma(110), style: "italic")[Printed Output File:]
-  ```js
-  module Math with
-    fun pow_Dyn_Lit1(x) = x
-    fun pow_Dyn_Lit2(x) =
-      let {tmp, tmp1}
-      tmp = 1
-      tmp1 = pow_Dyn_Lit1(x)
-      *(x, tmp1)
-  ```
-]
-
-
-#pagebreak()
-
-This is a similar process to staging, but done in reverse.
-
-As before, we need extra care when handling symbols.
-
-```js
-import "../M.mls"
-
-```
-
 = Benchmarking
 
 == Model-View-Projection transformation
 
-Used in 3D rendering
+Applied in 3D rendering.
 
 $ arrow(v) = M V P dot arrow(u) $
 
