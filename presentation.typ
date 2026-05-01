@@ -249,72 +249,33 @@ See memoization of code fragments in @swadi2006monadic.
 // // TODO
 // Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
 
-
-== Class Specialization 
+== Hybrid Partial Evaluation @shali2011hybrid 
 
 #columns(2)[
   #local(lang-format: (_, _, _) => [],
-  highlights: ((line: 11, start: 0, fill: yellow),),
   ```js
-  class B(val x) with
-    fun f() = ...
-  class D1(val x) extends B
-  class D2(val x) extends B
-  class D3(val x) extends B
-  // in a code fragment...
-  if x is
+  class D1(val x)
+  class D2(val x)
+  let y = if x is
     1 then new D1(1)
     2 then new D2(2)
-
-  x.f()
+  y.f()
   ```
   )
 
   #colbreak()
-  
-  // tODO
-  The approach in @shali2011hybrid cannot track disjunctive class types.
-  
-  We know that `x : B`, but we do not know which specific derived class of `B` are used.
-  
-  Even if `x` has a known class shape, we cannot remove matching arms.
+  #block(
+    fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%
+  )[
+    *Limitation:* Hybrid Partial Evaluation lacks *disjunctive class shapes* (e.g., #box[⟦#raw("D1(..)") $union$ #raw("D2(..)")⟧]), so `y.f()` cannot be specialized.
+  ]
 ]
 
-#pagebreak()
+== First Class Functions
 
-#codly(skips: ((1, 10), ))
 ```js
-if x is
-  D1 then x.D1_f1()
-  D2 then x.D2_f1()
-  D3 then x.D3_f1()
+
 ```
-
-#callout([Drawback],[
-  We are unable to eliminate the specialization of `D3`, even though it is unneeded.
-])
-
-// #pagebreak()
-
-// ```js
-// data class Foo(x, y) extends Bar(x+1, y+1)
-
-// if new Foo(1, 2) is
-//   Bar(x, y) then ...
-// ```
-
-// // TODO: read the paper
-// Under single inheritance, matching arms runs into problems. 
-
-// ```js
-// class Foo$1$2 extends Bar
-// class Bar$2$3
-// ```
-
-// #v(0.5em)
-// #callout([Drawback],[
-//   Either we perform class splitting, or we do not specialise inherited classes.
-// ])
 
 = Overview
 
@@ -2088,16 +2049,19 @@ A typical module after Dynamic Staging would look like the following:
     x * tmp1
   
 
-  fun pow_Dyn_Lit3(x) =
-    let {tmp, tmp1}
-    tmp = 2
-    tmp1 = pow_Dyn_Lit2(x)
-    x * tmp1
+  #[
+    #codly(offset: 9)
+      fun pow_Dyn_Lit3(x) =
+      let {tmp, tmp1}
+      tmp = 2
+      tmp1 = pow_Dyn_Lit2(x)
+      x * tmp1
   module M with
     fun pow(n, x) = ...
     fun cube(x) = ...
-  ```
-]
+    ```
+  ]
+
 
 #pagebreak()
 
@@ -2142,6 +2106,8 @@ Evaluate matrix multiplications when the matrices are known values.
 
 Benchmark: Transform 16k random coordinates using a known transformation matrices
 
+#text(size: 0.85em, fill: luma(110))[Environment: MacBook Pro (13-inch, M1, 2020) with 16 GB RAM]
+
 #v(1em)
 
 #let bar(pct, color, label) = block(width: 100%, height: 1.4em, above: 0pt, below: 0pt)[
@@ -2150,15 +2116,15 @@ Benchmark: Transform 16k random coordinates using a known transformation matrice
 ]
 
 #columns(2)[
-  === Time Taken (ns)
+  === Time Taken (second)
   #v(0.5em)
   #grid(
     columns: (auto, 1fr),
     row-gutter: 1.2em,
     column-gutter: 0.8em,
     align: horizon,
-    [*Before*], bar(100%, luma(220), [1,455,662,542]),
-    [*After*],  bar(38%, rgb("e08020"), [553,668,000]),
+    [*Original*], bar(100%, luma(220), [1.46]),
+    [*Dynamic Staging*],  bar(38%, rgb("e08020"), [0.55]),
   )
 
   #colbreak()
@@ -2170,11 +2136,19 @@ Benchmark: Transform 16k random coordinates using a known transformation matrice
     row-gutter: 1.2em,
     column-gutter: 0.8em,
     align: horizon,
-    [*Before*], bar(24.8%, luma(220), [242]),
-    [*After*],  bar(100%, rgb("e08020"), [975]),
+    [*Original*], bar(24.8%, luma(220), [242]),
+    [*Dynamic Staging*],  bar(100%, rgb("e08020"), [975]),
   )
 ]
 
+#pagebreak()
+== Web-demo & QnA
+
+#align(center)[
+  #link("https://chinglongtin.github.io/mlscript/")
+  #v(1em)
+  #image("qrcode.png", width: 40%)
+]
 
 /*
 
@@ -2247,4 +2221,3 @@ Those act as points that the user can call the staged module with. Other special
 #pagebreak()
 
 #bibliography("ref.bib")
-
