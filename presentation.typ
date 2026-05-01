@@ -36,7 +36,7 @@
 6. Host the web-demo on github page maybe
 7. Mention the 'stub' thing
 8. Research some more related works.
-9. Explain why we recreate the Block data structure within MLScript instead of directly manipulating the Scala Block (Maintainability?)
+9. Explain the motivation why we recreate the Block data structure within MLScript instead of directly manipulating the Scala Block (Maintainability?)
 */
 
 = Motivation
@@ -309,7 +309,7 @@ class Block with
     Assign(lhs, rhs, rest)
 ```
 
-For any Scala Block data, we can recreate the same structure which we called #strong([Staged Block]).
+For any Scala Block data, we can recreate the same structure within MLscript which we called #strong([Staged Block]).
 ]
 
 #slide[
