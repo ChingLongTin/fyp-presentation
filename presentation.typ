@@ -61,7 +61,7 @@ Programmers often write code in a clear, general style, even when parts of it co
 
   *can actually be written as*
   ```js
-  fun dotWith3(v) = v(0) + 2 * v(2)
+  fun dotWith3(v) = v.(0) + 2 * v.(2)
   ```
 ]
 
@@ -282,9 +282,9 @@ Hence, our approach is a combination of *metaprogramming* (code generator) and *
 
 #align(center)[#image("pipeline-overview.svg", width: 95%)]
 - Lexer/Parser: converts source code into AST
-- Elaborator/Resolver: Deal with references
-- #strong[Lowering]: converts AST to a simplified format
-- Codegen: Turn AST into executable code (JavaScript).
+- Elaborator/Resolver: deal with references
+- #strong[Lowering]: converts AST of *Term* to AST of *Block*
+- Codegen: turn AST into executable code (JavaScript).
 
 == Dynamic Staging Recipe
 
