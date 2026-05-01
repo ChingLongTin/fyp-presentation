@@ -736,8 +736,15 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
 
 == Function-to-Class Transformation
 
-Simplify lambda functions by turning them into classes
-// TODO
+Convert the lambda functions into classes, so that they can be uniformly treated as classes.
+
+```js
+fun f(y) = x => x + y
+
+class Function(y) with
+  fun call(x) = x + y
+fun f(y) = Function(y)
+```
 
 = Shape Propagation
 
@@ -2070,25 +2077,24 @@ A typical module after Dynamic Staging would look like the following:
   #set text(size: 0.9em)
   *Dynamic Staging Output*
   ```js
+  fun pow_Dyn_Lit1(x) =
+    let {tmp, tmp1}
+    x
+  fun pow_Dyn_Lit2(x) =
+    let {tmp, tmp1}
+    tmp = 1
+    tmp1 = pow_Dyn_Lit1(x)
+    x * tmp1
+  
+
+  fun pow_Dyn_Lit3(x) =
+    let {tmp, tmp1}
+    tmp = 2
+    tmp1 = pow_Dyn_Lit2(x)
+    x * tmp1
   module M with
-    fun pow_Dyn_Lit1(x) =
-      let {tmp, tmp1}
-      x
-    fun pow_Dyn_Lit2(x) =
-      let {tmp, tmp1}
-      tmp = 1
-      tmp1 = pow_Dyn_Lit1(x)
-      *(x, tmp1)
-  ```
-
-  #colbreak()
-
-  ```js
-    fun pow_Dyn_Lit3(x) =
-      let {tmp, tmp1}
-      tmp = 2
-      tmp1 = pow_Dyn_Lit2(x)
-      *(x, tmp1)
+    fun pow(n, x) = ...
+    fun cube(x) = ...
   ```
 ]
 
