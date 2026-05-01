@@ -244,13 +244,13 @@ fun power10 = .! .<(x => .~(power(10, .<x>.)))>.
 
 See memoization of code fragments in @swadi2006monadic.
 
-== Linking Rewriting DSLs
+// == Linking Rewriting DSLs
 
-// TODO
-Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
+// // TODO
+// Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
 
 
-== Class Specialization
+== Class Specialization 
 
 #columns(2)[
   #local(lang-format: (_, _, _) => [],
@@ -271,8 +271,9 @@ Improve the compilation of functions with domain-specific modules. @parreaux2017
   )
 
   #colbreak()
-
-  Traditional MSP tracks types.
+  
+  // tODO
+  The approach in @shali2011hybrid cannot track disjunctive class types.
   
   We know that `x : B`, but we do not know which specific derived class of `B` are used.
   
@@ -293,27 +294,27 @@ if x is
   We are unable to eliminate the specialization of `D3`, even though it is unneeded.
 ])
 
-#pagebreak()
+// #pagebreak()
 
-```js
-data class Foo(x, y) extends Bar(x+1, y+1)
+// ```js
+// data class Foo(x, y) extends Bar(x+1, y+1)
 
-if new Foo(1, 2) is
-  Bar(x, y) then ...
-```
+// if new Foo(1, 2) is
+//   Bar(x, y) then ...
+// ```
 
-// TODO: read the paper
-Under single inheritance, matching arms runs into problems. @shali2011hybrid
+// // TODO: read the paper
+// Under single inheritance, matching arms runs into problems. 
 
-```js
-class Foo$1$2 extends Bar
-class Bar$2$3
-```
+// ```js
+// class Foo$1$2 extends Bar
+// class Bar$2$3
+// ```
 
-#v(0.5em)
-#callout([Drawback],[
-  Either we perform class splitting, or we do not specialise inherited classes.
-])
+// #v(0.5em)
+// #callout([Drawback],[
+//   Either we perform class splitting, or we do not specialise inherited classes.
+// ])
 
 = Overview
 
