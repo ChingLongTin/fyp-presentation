@@ -692,9 +692,9 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
 
 #let shape(s) = box[⟦#raw(s)⟧]
 
-#let ctxbox(body) = block(
+#let ctxbox(title: "ctx", body) = block(
   fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.6em, radius: 4pt,
-  width: 100%, [#text(size: 0.8em, weight: "bold")[ctx] \ #body]
+  width: 100%, [#text(size: 0.8em, weight: "bold")[#title] \ #body]
 )
 
 
@@ -846,8 +846,10 @@ We evaluate paths $p$ to their shapes $s$.
     example(```js
     x
     ```)[
-      $Gamma = x mapsto ⟦C(n\:⟦1⟧)⟧$ \
-      $Gamma tack.r x => ⟦C(n\:⟦1⟧)⟧$
+      $Gamma = x mapsto ⟦C(n\:⟦1⟧)⟧$
+      #box(width: 100%, stroke: (top: 0.6pt), inset: (top: 0.3em, x: 0.4em))[
+        $Gamma tack.r x => ⟦C(n\:⟦1⟧)⟧$
+      ]
     ],
     example(```js
     x.n
@@ -927,8 +929,8 @@ We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $
 
 #v(1fr)
 #align(center)[
-  #set text(size: 0.8em)
-  #grid(columns: (0.8fr, 1fr, 1.5fr), column-gutter: 0.8em, row-gutter: 0.9em,
+  #set text(size: 0.7em)
+  #grid(columns: (0.7fr, 1.1fr, 1.5fr), column-gutter: 0.8em, row-gutter: 0.9em,
     align: (_, row) => if row == 0 { bottom + center } else { top + center },
     rule([Path],
       $Gamma tack.r p => s$,
@@ -1026,44 +1028,33 @@ When $f$ is *staged*, we recursively specialise its body on the argument shapes.
 
 After propagation, the call site `pyth(2, 3)` is rewritten to its cached variant.
 
-#columns(2)[
-  #block[
-    #set text(size: 0.85em)
-    #text(fill: luma(110), style: "italic")[Example] \
-    #local(number-format: none,
-      ```js
-      staged module Staged with
-        fun pyth_Lit2_Lit3() = 13
-        fun test() = pyth_Lit2_Lit3()
-      ```
-    )
-  ]
+#block[
+  #set text(size: 0.85em)
+  #text(fill: luma(110), style: "italic")[Example] \
+  #local(number-format: none,
+    ```js
+    staged module Staged with
+      fun pyth_Lit2_Lit3() = 13
+      fun test() = pyth_Lit2_Lit3()
+    ```
+  )
+]
 
-  #colbreak()
-
-  #text(fill: luma(110), style: "italic")[Cache] \
-  #v(0.3em)
+#block[
   #set text(size: 0.8em)
+  #text(fill: luma(110), style: "italic")[Cache] \
   #table(
-    columns: (auto, auto, auto),
+    columns: (auto, auto, auto, auto, auto),
     stroke: 0.4pt + luma(180),
     inset: (x: 0.6em, y: 0.45em),
     fill: (_, row) => if row == 0 { luma(235) } else if row == 1 { yellow.lighten(60%) } else { white },
-    [*Function*], [*Shapes*], [*Specialised*],
-    [`pyth`], [$(⟦2⟧, ⟦3⟧)$], [`pyth_Lit2_Lit3`],
-    [`pyth`], [$(bold("dyn"), bold("dyn"))$], [`pyth_Dyn_Dyn`],
-    [...], [...], [...],
+    [*Function*], [*Shapes*], [*Symbol*], [*Block*], [*Returned Shape*],
+    [`pyth`], [$(⟦2⟧, ⟦3⟧)$], [`pyth_Lit2_Lit3`], [`return 13`], [$⟦13⟧$],
+    [`pyth`], [$(bold("dyn"), bold("dyn"))$], [`pyth_Dyn_Dyn`], [`return x*x+y*y`], [$bold("dyn")$]
   )
-  #v(0.4em)
   If $f_"gen"$ is called with the same $(f, overline(s))$ again, it looks up the existing entry in the cache instead of re-specialising.
 ]
 
-#v(1fr)
-#align(center)[
-  #text(size: 0.9em, fill: luma(110))[
-    $r ::= p | [overline(p)] | bold("new") med C(overline(p)) | f(overline(p))$
-  ]
-]
 
 #pagebreak()
 
@@ -1481,7 +1472,7 @@ $"rest"$ removes shapes already covered by a match pattern.
 
 #pagebreak()
 
-== Non Termination 1
+=== Non Termination 1
 
 Consider fibonacci number:
 
@@ -1503,10 +1494,18 @@ With `n` ↦ #shape("dyn"), every branch is viable. The recursive call `fib(n - 
 
 Before propagating into `fib(dyn)`, we *pre-insert a stub* into the cache:
 
-#block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
-)[
-  `fib_Dyn` ↦ ( , #shape("dyn")) #h(1fr) _(stub, no specialized block, only return shape)_
+#block[
+  #set text(size: 0.8em)
+  #text(fill: luma(110), style: "italic")[Cache (stub inserted)] \
+  #v(0.3em)
+  #table(
+    columns: (auto, auto, auto, auto, auto),
+    stroke: 0.4pt + luma(180),
+    inset: (x: 0.6em, y: 0.45em),
+    fill: (_, row) => if row == 0 { luma(235) } else if row == 1 { yellow.lighten(60%) } else { white },
+    [*Function*], [*Shapes*], [*Symbol*], [*Block*], [*Returned Shape*],
+    [`fib`], [$(bold("dyn"),)$], [`fib_Dyn`], [_stub_], [$bold("dyn")$],
+  )
 ]
 
 #v(0.5em)
@@ -1528,55 +1527,109 @@ fun fib_Dyn(n) = if n is
   n then fib_Dyn(n - 1) + fib_Dyn(n - 2)
 ```
 
-#block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
-)[
-  `fib_Dyn` ↦ (Specialized Block, #shape("dyn"))
+#block[
+  #set text(size: 0.8em)
+  #text(fill: luma(110), style: "italic")[Cache (stub filled)] \
+  #v(0.3em)
+  #table(
+    columns: (auto, auto, auto, auto, auto),
+    stroke: 0.4pt + luma(180),
+    inset: (x: 0.6em, y: 0.45em),
+    fill: (_, row) => if row == 0 { luma(235) } else if row == 1 { yellow.lighten(60%) } else { white },
+    [*Function*], [*Shapes*], [*Symbol*], [*Block*], [*Returned Shape*],
+    [`fib`], [$(bold("dyn"),)$], [`fib_Dyn`], [`if n is ...`], [$bold("dyn")$],
+  )
 ]
 
 #block(
   fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
 )[
-  #text(weight: "bold")[Remark.] Stub insertion only guarantees termination of the first stage (shape propagation) when *the original program terminates*. If the source program itself does not terminate, the optimizer running in the first stage is not guaranteed to terminate either.
+  #text(weight: "bold")[Remark.] Stub insertion only guarantees termination of the first stage (shape propagation) when *the original program terminates*. 
 ]
 
-== Non Termination 2
+=== Non Termination 2
 
-Consider:
+Consider a function that scans an array for a zero:
 
 ```js
-staged module NonTermination with
-  fun f(x, y) = if x == 
-    y then 0
-    else f(x, y + 1)
+staged module Staged with
+  fun f(xs, i) =
+    if xs.(i) is
+      0 then i
+      v then f(xs, i + 1)
 ```
 
-With `x` ↦ #shape("dyn") and `y` ↦ #shape("0"), the scrutinee `x == y` has shape #shape("dyn"), so both branches are viable. The recursive call `f(x, y + 1)` gives `y` shape #shape("1"), then #shape("2")... 
+With `xs` ↦ #shape("dyn") and `i` ↦ #shape("0") on the first call, `xs.(0)` is #shape("dyn") — both branches viable.
 
-shape propagation diverges :(
+The recursive call has `i` ↦ #shape("1"), then #shape("2"), ... — Shape Propagation diverges!
+
+
 
 #pagebreak()
 
 === Solution: Context Decay
 
-Before processing the branches of `if x == y`, since the scrutinee shape is #shape("dyn"), we *decay* the context: every path that influenced the scrutinee is refined to #shape("dyn").
+Before processing the branches of `if xs.(i) is`, since the scrutinee has shape #shape("dyn"), we *decay* the context: every path that influenced the scrutinee is refined to #shape("dyn").
 
-Here `x == y` depends on `x` and `y`, so both are decayed to #shape("dyn") before entering the branches.
+Here `xs.(i)` depends on `xs` and `i`, so both are decayed to #shape("dyn") before entering the branches.
 
-#block[
-  #set text(size: 0.85em)
-  $
-    "decay"(Gamma, p, s) &= Gamma quad "if " p != x "for some variable" x "or" s != bold("dyn") \
-    "decay"(Gamma, x, bold("dyn")) &= Gamma attach(overline(p_i mapsto bold("dyn")), tr: p_i in "alias"("clos"(x)))
-  $
+#align(center)[
+  #block[
+    #set text(size: 0.85em)
+    $
+      "decay"(Gamma, p, s) &= Gamma quad "if " p != x "for some variable" x "or" s != bold("dyn") \
+      "decay"(Gamma, x, bold("dyn")) &= attach(Gamma dot.op lr([overline(p_i mapsto bold("dyn"))]), tr: p_i in "alias"("clos"(x)))
+    $
+  ]
 ]
 
-With `y` ↦ #shape("dyn") after decay, `y + 1` ↦ #shape("dyn") too — the recursive call always hits a stable shape, so propagation terminates.
+// #block(
+//   fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
+// )[
+//   #text(weight: "bold")[Remark.] $"clos"(x)$ is the set of paths whose values *flowed into* $x$ (i.e. arguments used to compute $x$). $"alias"(p)$ is the set of all paths that *point to the same value* as $p$ (e.g. if $x = "new" med C(y)$, then $y$ and $x.n$ are aliases). Together, $"alias"("clos"(x))$ collects every path in the context that could observe the dynamic value — all of which must be decayed to $bold("dyn")$.
+// ]
+
+With `i` ↦ #shape("dyn") after decay, `i + 1` ↦ #shape("dyn") too. The recursive call always hits a stable shape — propagation terminates.
+
+#pagebreak()
+
+Combining `filter`, `rest`, dead branch elimination and `decay` yields the following formalization:
+
+#let rule(name, premises, conclusion) = {
+  set align(center)
+  stack(dir: ttb, spacing: 0.6em,
+    premises,
+    box(width: 100%, stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em), conclusion),
+  )
+}
+
+#v(1fr)
+#align(center)[
+  #set text(size: 0.78em)
+  #rule([Match],
+    grid(
+      columns: 1, row-gutter: 1.2em, align: center,
+      grid(
+        columns: 2, column-gutter: 2.5em, align: center,
+        $overline(Gamma_0 dot.op (p mapsto s_i') tack.r b_i ~> b_i' => Gamma_i\, s_i'')^(i=1..n\, s_i != bot)$,
+        $Gamma_0 #sym.join overline(Gamma_i - Gamma_0)^(i=1..n\, s_i != bot) tack.r b_r ~> b_r' => Gamma'\, s$
+      ),
+      grid(
+        columns: 3, column-gutter: 2.5em, align: center,
+        $Gamma tack.r p => s_0$,
+        $Gamma_0 = "decay"(Gamma, p, s_0)$,
+        $overline(s_i' = "filter"(s_(i-1), pi_i) quad s_i = "rest"(s_(i-1), pi_i))^n$
+      )
+    ),
+    $Gamma tack.r bold("if") med p med bold("is") med overline(pi_i med bold("then") med b_i)^n; med b_r ~> bold("if") med p med bold("is") med overline(pi_i med bold("then") med b_i')^(i=1..n\, s_i != bot); med b_r' => s$
+  )
+]
+#v(1fr)
 
 
 
-== Dynamic Dispatching (Example)
-When a method is called on a value with a *union shape*, we split by class and dispatch separately.
+== Staged Class
+Similar to staging module, we can stage classes as well, where we specializes on its method, with the main difference being dynamic dispatching `x.f()`.
 
 #local(lang-format: (_, _, _) => [],
 ```js
@@ -1594,26 +1647,25 @@ staged module M with
 )
 
 
+
 #pagebreak()
 
 #columns(2)[
   === Trace A: `f(dyn)`
 
-
+  #set text(size: 0.95em)
   Specialise `f` with `b` ↦ #shape("dyn").
 
   #only("2-")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
-  #[#set text(size: 0.85em)
   ```js
   fun f(b) =
     let m = pick(new B1(2),new B2(3),b)
     twice(m, 5)
-  ```]
+  ```
 
   #colbreak()
 
-  #set text(size: 0.85em)
-  #ctxbox[
+  #ctxbox(title: [`f`'s ctx])[
     `b` ↦ #shape("dyn")
     #only("2-")[\ `m` ↦ #shape("⊥")]
   ]
@@ -1630,21 +1682,19 @@ staged module M with
 #columns(2)[
   === Trace B: `pick(B1(2), B2(3), dyn)`
 
+  #set text(size: 0.95em)
   #only("2")[#codly(highlights: ((line: 1, start: 5, end: 17, fill: yellow),))]
   #only("3")[#codly(highlights: ((line: 2, start: 6, fill: yellow),))]
   #only("4")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
-  #[#set text(size: 0.85em)
   ```js
   fun pick(x, y, b) =
     if b then x
     else y
-  ```]
+  ```
 
   #colbreak()
 
-  #set text(size: 0.85em)
-  #ctxbox[
-    #text(size: 0.9em, style: "italic")[fresh ctx for `pick`] \
+  #ctxbox(title: [`pick`'s ctx])[
     `x` ↦ #shape("B1(2)") \
     `y` ↦ #shape("B2(3)") \
     `b` ↦ #shape("dyn")
@@ -1666,19 +1716,18 @@ staged module M with
 #columns(2)[
   === Trace A (continued): back in `f`
 
+  #set text(size: 0.85em)
   #only("1-2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
   #only("3-")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
-  #[#set text(size: 0.85em)
   ```js
   fun f(b) =
     let m = pick(new B1(2), new B2(3), b)
     twice(m, 5)
-  ```]
+  ```
 
   #colbreak()
 
-  #set text(size: 0.85em)
-  #ctxbox[
+  #ctxbox(title: [`f`'s ctx])[
     `b` ↦ #shape("dyn") \
     `m` ↦ #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧]
   ]
@@ -1686,7 +1735,7 @@ staged module M with
   #pause
   + Bind `m` to `pick`'s returned shape = #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧]
   #pause
-  + `twice(m, 5)`: `m` has *union shape* $arrow$ *go to Trace C* and specialise as `twice1`
+  + `twice(m, 5)`: $arrow$ *go to Trace C* and specialise as `twice1`
 ]
 
 
@@ -1697,6 +1746,7 @@ staged module M with
 
   #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
   #only("3")[#codly(highlights: ((line: 3, start: 9, end: 18, fill: yellow),))]
+  #only("4-")[#codly(highlights: ((line: 3, start: 3, end: 7, fill: yellow),))]
   #[#set text(size: 0.85em)
   ```js
   fun twice(f, x) =
@@ -1716,19 +1766,31 @@ staged module M with
   #colbreak()
 
   #set text(size: 0.85em)
-  #ctxbox[
+  #ctxbox(title: [`twice`'s ctx])[
     `f` ↦ #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧] \
     `x` ↦ #shape("5")
-    #only("2")[\ `tmp` ↦ #shape("⊥")]
-    #only("3-")[\ `tmp` ↦ #shape("{9, 8}")]
+    #only("2-3")[\ `tmp` ↦ #shape("⊥")]
+    #only("4-")[\ `tmp` ↦ #box[⟦#raw("9") $union$ #raw("8")⟧]]
   ]
 
-  #pause
-  + `let tmp`: extend ctx with `tmp` ↦ #shape("⊥")
-  #pause
-  + `f.call(x)` on union $arrow$ *split by class*:
-    - `f` = #shape("B1(2)"): cache `f.call1()` $arrow$ #shape("9")
-    - `f` = #shape("B2(3)"): cache `f.call1()` $arrow$ #shape("8")
+  #only("2")[
+    + `let tmp`: extend ctx with `tmp` ↦ #shape("⊥")
+  ]
+  #only("3")[
+    #set enum(start: 2)
+    + `f.call(x)` on union $arrow$ *split by class*:
+      - `f` = #shape("B1(2)"):
+        #ctxbox(title: [`B1.call`'s ctx])[
+          `this` ↦ #shape("B1(2)") \
+          `x` ↦ #shape("5")
+        ]
+        cache `f.call1()` in `B1` $arrow$ #shape("9")
+      - `f` = #shape("B2(3)"): cache `f.call1()` in `B2` $arrow$ #shape("8")
+  ]
+  #only("4-")[
+    #set enum(start: 3)
+    + `tmp = f.call(x)`: bind `tmp` to #box[⟦#raw("9") $union$ #raw("8")⟧]
+  ]
 ]
 
 
@@ -1737,7 +1799,7 @@ staged module M with
 #columns(2)[
   === Trace C (continued): second call
 
-  #codly(highlights: ((line: 3, start: 3, end: 7, fill: yellow),))
+  #codly(highlights: ((line: 4, start: 5, end: 15, fill: yellow),))
   #[#set text(size: 0.85em)
   ```js
   fun twice(f, x) =
@@ -1755,67 +1817,130 @@ staged module M with
   #colbreak()
 
   #set text(size: 0.85em)
-  #ctxbox[
+  #ctxbox(title: [`twice`'s ctx])[
     `f` ↦ #box[⟦#raw("B1(2)") $union$ #raw("B2(3)")⟧] \
     `x` ↦ #shape("5") \
-    `tmp` ↦ #shape("{9, 8}")
+    `tmp` ↦ #box[⟦#raw("9") $union$ #raw("8")⟧]
   ]
 
-  #set enum(start: 3)
-  + `f.call(tmp)` with `tmp` in #shape("{9, 8}") (now #shape("dyn")): split again, body kept as code
-    - `f` = #shape("B1"): cache `f.call2(x) = x + 2 + 2`
-    - `f` = #shape("B2"): cache `f.call2(x) = x + 3`
+  #set enum(start: 4)
+  + `f.call(tmp)` with `tmp` in #box[⟦#raw("9") $union$ #raw("8")⟧]: split again, body kept as code
+    - `f` = #shape("B1"): cache `f.call2(x) = x + 2 + 2` in `B1` $arrow$ #box[⟦#raw("13") $union$ #raw("12")⟧]
+    - `f` = #shape("B2"): cache `f.call2(x) = x + 3` in `B2` $arrow$ #box[⟦#raw("12") $union$ #raw("11")⟧]
 ]
-
 
 #pagebreak()
 
 === Resulting Cache
 
-After propagation, `M` and the staged classes contain:
+After propagation, the residual `M` and the residual classes contain:
+
+#grid(columns: (1fr, 1fr), column-gutter: 1.5em,
+  [
+    ```js
+    module M with
+      fun f(b) =
+        let m, tmp1, tmp2
+        tmp1 = new B1(2)
+        tmp2 = new B2(3)
+        m = pick1(tmp1, tmp2, b)
+        twice1(m)
+      fun pick1(x, y, b) =
+        if b then new B1(2) else new B2(3)
+    ```
+
+    ```js
+    class B1(y) with
+      fun call1() = 9
+      fun call2(x) =
+        let tmp
+        tmp = x + 2
+        tmp + 2
+
+    class B2(y) with
+      fun call1() = 8
+      fun call2(x) = x + 3
+    ```
+  ],
+  [
+    ```js
+    fun twice1(f) =
+      let tmp
+      if f is
+        B1 then tmp = f.call1()
+        B2 then tmp = f.call1()
+      if f is
+        B1 then f.call2(tmp)
+        B2 then f.call2(tmp)
+    ```
+    
+    #v(1em)
+    #block(
+      fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
+    )[
+      #set text(size: 0.85em)
+      #text(weight: "bold")[Remark.] If `f`'s shape included an *unstaged* class `B3`, we could not specialise the `B3.call` function without its Staged Block. The generated `twice1` would then include an `else` branch falling back to the original `f.call(...)`.
+    ]
+  ]
+)
+
+= Inlining
+
+== Inlining
+
+A typical module after Dynamic Staging will look like the following.
+
+#v(1em)
 
 #columns(2)[
+  #set text(size: 0.9em)
+  *Dynamic Staging Output*
   ```js
   module M with
-    fun f(b) =
-      let m, tmp1, tmp2
-      tmp1 = new B1(2)
-      tmp2 = new B2(3)
-      m = pick1(tmp1, tmp2, b)
-      twice1(m)
-    fun pick1(x, y, b) =
-      if b then new B1(2) else new B2(3)
+    fun pow_Dyn_Lit1(x) =
+      let {tmp, tmp1}
+      x
+    fun pow_Dyn_Lit2(x) =
+      let {tmp, tmp1}
+      tmp = 1
+      tmp1 = pow_Dyn_Lit1(x)
+      *(x, tmp1)
   ```
 
   #colbreak()
 
-  ```
-  fun twice1(f) =
-    let tmp
-    if f is
-      B1 then tmp = f.call1()
-      B2 then tmp = f.call1()
-    if f is
-      B1 then f.call2(tmp)
-      B2 then f.call2(tmp)
-  ```
-
-  #colbreak() 
-
   ```js
-  class B1(y) with
-    fun call1() = 9
-    fun call2(x) =
-      let tmp
-      tmp = x + 2
-      tmp + 2
-
-  class B2(y) with
-    fun call1() = 8
-    fun call2(x) = x + 3
+    fun pow_Dyn_Lit3(x) =
+      let {tmp, tmp1}
+      tmp = 2
+      tmp1 = pow_Dyn_Lit2(x)
+      *(x, tmp1)
   ```
 ]
 
+#pagebreak()
+
+During *the second stage of compilation*, we utilize the MLscript compiler's existing inlining capabilities to inline function calls, as recursion has been eliminated during dynamic staging.
+
+#align(center)[
+  #set text(size: 0.75em)
+  #align(left)[
+    ```javascript
+    let x, inlinedVal, tmp1, x1, inlinedVal1, tmp11, x2, inlinedVal2;
+    x = 2;
+    x1 = x;
+    x2 = x1;
+    inlinedVal2 = x2;
+    tmp11 = inlinedVal2;
+    inlinedVal1 = x1 * tmp11;
+    tmp1 = inlinedVal1;
+    inlinedVal = x * tmp1;
+    return inlinedVal
+    ```
+  ]
+]
+
+= Printing Staged Block
 
 == Printing Staged Block
 
