@@ -676,7 +676,6 @@ fun f(p, cond) =
 
 === Block in BNF 
 
-#set text(size: 0.88em)
 #let lbl(s) = text(style: "italic", fill: luma(110), size: 0.95em)[#s]
 
 // Header rows: terminal categories paired side-by-side, like the paper.
@@ -717,48 +716,46 @@ fun f(p, cond) =
     $::= epsilon | bold("if") med p med bold("is") med overline(kappa); B | x = r; B | bold("let") med x; B$, [],
   [], lbl[Block], $b$,
     $::= bold("return") med r | bold("end") | B; med b$, [],
-  [], lbl[Shape], $s$,
-    $::= ⟦iota⟧ | bold("dyn") | ⟦[overline(s)]⟧ | ⟦C(overline(n\:s))⟧ | bot | s union s$, [],
-  [], lbl[Shape context], $Gamma$,
-    $::= epsilon | Gamma, p mapsto s quad (p eq.not x)$, [],
+  // [], lbl[Shape], $s$,
+  //   $::= ⟦iota⟧ | bold("dyn") | ⟦[overline(s)]⟧ | ⟦C(overline(n\:s))⟧ | bot | s union s$, [],
+  // [], lbl[Shape context], $Gamma$,
+  //   $::= epsilon | Gamma, p mapsto s quad (p eq.not x)$, [],
 )
 
 == A Tiny Example
 
 #pagebreak()
 
-  A *Shape* captures what we statically know about a value at compile time.
+A *Shape* captures what we statically know about a value at compile time.
 
-  $ s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot | s union s $
+$ #lbl[Shape] s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot | s union s $
 
-  We write #shape("s") to denote the shape of an expression, distinguishing it from actual values.
+We write #shape("s") to denote the shape of an expression, distinguishing it from actual values.
 
-  #v(0.3em)
-  #grid(columns: (27em, 1fr), column-gutter: 1em, align: (left, left + horizon),
-    [
-      ```js
-      fun f(p, cond) =
-        let a = 42
-        let b = C(p, 2)
-        let c = if cond then [1, 2] else C(1, 2)
-        let d = if b is C then 0 else 1
-      ```
-    ],
-    [
-      \
-      #shape("42") \
-      #shape("C(dyn, 2)") \
-      #box[⟦#raw("[1,2]") $union$ #raw("C(1,2)")⟧] \
-      #shape("0")
-    ]
-  )
+#v(0.3em)
+#grid(columns: (27em, 1fr), column-gutter: 1em, align: (left, left + horizon),
+  [
+    ```js
+    fun f(p, cond) =
+      let a = 42
+      let b = C(p, 2)
+      let c = if cond then [1, 2] else C(1, 2)
+      let d = if b is C then 0 else 1
+    ```
+  ],
+  [
+    \
+    #shape("42") \
+    #shape("C(dyn, 2)") \
+    #box[⟦#raw("[1,2]") $union$ #raw("C(1,2)")⟧] \
+    #shape("0")
+  ]
+)
 
 
 #pagebreak()
 
 === A Tiny Example
-
-A tiny program, propagating shapes by hand:
 
 ```js
 staged module M with
@@ -766,7 +763,6 @@ staged module M with
   fun test()  = add1(2)
 ```
 
-#v(0.4em)
 Walking through `test()`:
 
 + Argument `2` has shape #shape("2") (a literal).
@@ -774,14 +770,11 @@ Walking through `test()`:
 + `x + 1` folds: #shape("2") `+` #shape("1") $arrow$ #shape("3").
 + Cache the result as `add1_Lit2() = 3`; rewrite the call site `add1(2)` to `add1_Lit2()`.
 
-#v(0.4em)
 Final shape of `test()`: #shape("3"). Body collapses to a constant.
 
 
 
-== Shape Propagation (Formalization)
-
-=== Shape of Path ($Gamma tack.r p => s$)
+== Shape of Path  ($Gamma tack.r p => s$)
 
 We evaluate paths $p$ to their shapes $s$.
 
@@ -808,7 +801,7 @@ We evaluate paths $p$ to their shapes $s$.
 
 #v(1fr)
 #align(center)[
-  #grid(columns: (1fr, 1fr, 1fr), column-gutter: 1.5em, row-gutter: 0.8em,
+  #grid(columns: (0.9fr, 1.2fr, 1.2fr), column-gutter: 1.5em, row-gutter: 0.8em,
     align: (_, row) => if row == 0 { bottom + center } else { top + center },
     rule([Lit], $ $, $Gamma tack.r iota => ⟦iota⟧$),
     rule([Path], $(p mapsto s) in Gamma quad s eq.not bot$, $Gamma tack.r p => s$),
@@ -854,7 +847,7 @@ $
     & quad "sel"(bold("dyn"), ⟦n_i⟧) &= bold("dyn") \
   "sel"(⟦[overline(s_i)^(i in 0..n)]⟧, ⟦i⟧) &= s_i
     & quad "sel"(s_1 union s_2, s) &= "sel"(s_1, s) union "sel"(s_2, s) \
-  "sel"(s_1, s_2) &= bold("err") quad "otherwise"
+  "sel"(s_1, s_2) &= bold("err")
 $
 
 #block(
@@ -876,7 +869,7 @@ $
 
 #pagebreak()
 
-=== Shape of Result (`sor`: $Gamma tack.r r ~> r' => s$)
+== Shape of Result ($Gamma tack.r r ~> r' => s$)
 
 We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $s$.
 
@@ -942,7 +935,6 @@ We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $
   ]
 ]
 
-
 #pagebreak()
 
 === Shape of Result (`sor`) — Staged Application
@@ -985,7 +977,7 @@ When $f$ is *staged*, we recursively specialise its body on the argument shapes.
       fun test() = pyth(2, 3)
     ```
   )
-  Specialise $"pyth"_"gen" thin (⟦2⟧, ⟦3⟧)$ $arrow$ produces `pyth_Lit2_Lit3() = 13`, shape $⟦13⟧$. \
+  Specialise $"pyth"_"gen" thin (⟦2⟧, ⟦3⟧)$ $arrow$ produces `pyth_Lit2_Lit3() = 13`, shape $⟦13⟧$. The specialized function will be saved to the cache.\
   Conclusion: $epsilon tack.r "pyth"(2,3) ~> 13 => ⟦13⟧$
 ]
 
@@ -999,36 +991,40 @@ When $f$ is *staged*, we recursively specialise its body on the argument shapes.
 
 #pagebreak()
 
-=== Shape of Result (`sor`) — After Specialisation
+=== Shape of Result (`sor`) — Staged Application
 
 After propagation, the call site `pyth(2, 3)` is rewritten to its cached variant.
 
-#v(1fr)
-#align(center)[
-  #set text(size: 0.95em)
-  #stack(dir: ttb, spacing: 0.6em,
-    $f " is staged" quad Gamma tack.r p_i => s_i quad f_"gen" thin (overline(p), overline(s)) = (r', s)$,
-    box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 6em),
-      $Gamma tack.r f(overline(p_i)) ~> r' => s$,
-    ),
-  )
-]
-#v(0.8em)
+#columns(2)[
+  #block[
+    #set text(size: 0.85em)
+    #text(fill: luma(110), style: "italic")[Example] \
+    #local(number-format: none,
+      ```js
+      staged module Staged with
+        fun pyth_Lit2_Lit3() = 13
+        fun test() = pyth_Lit2_Lit3()
+      ```
+    )
+  ]
 
-#block(
-  stroke: (top: 0.4pt + luma(180)),
-  inset: (top: 0.5em, x: 0.4em),
-  width: 100%,
-)[
+  #colbreak()
+
+  #text(fill: luma(110), style: "italic")[Cache] \
+  #v(0.3em)
   #set text(size: 0.85em)
-  #text(fill: luma(110), style: "italic")[Example] \
-  #local(number-format: none,
-    ```js
-    staged module Staged with
-      fun pyth_Lit2_Lit3() = 13
-      fun test() = pyth_Lit2_Lit3()
-    ```
+  #table(
+    columns: (auto, auto, auto),
+    stroke: 0.4pt + luma(180),
+    inset: (x: 0.6em, y: 0.45em),
+    fill: (_, row) => if row == 0 { luma(235) } else if row == 1 { yellow.lighten(60%) } else { white },
+    [*Function*], [*Shapes*], [*Specialised*],
+    [`pyth`], [$(⟦2⟧, ⟦3⟧)$], [`pyth_Lit2_Lit3`],
+    [`pyth`], [$(bold("dyn"), bold("dyn"))$], [`pyth_Dyn_Dyn`],
+    [...], [...], [...],
   )
+  #v(0.4em)
+  If $f_"gen"$ is called with the same $(f, overline(s))$ again, it looks up the existing entry in the cache instead of re-specialising.
 ]
 
 #v(1fr)
@@ -1117,7 +1113,6 @@ When $f$ is *non-staged*, we don't have its Staged Block. Two sub-cases.
 
 === Non-Staged Application Example
 
-#set text(size: 0.88em)
 #columns(2)[
   #local(number-format: none,
     ```js
@@ -1146,21 +1141,13 @@ When $f$ is *non-staged*, we don't have its Staged Block. Two sub-cases.
 
 - No specialised functions are generated for the non-staged module `NonStaged`.
 
-#v(1fr) 
-
-#align(center)[
-  #text(size: 0.9em, fill: luma(110))[
-    $r ::= p | [overline(p)] | bold("new") med C(overline(p)) | f(overline(p))$
-  ]
-]
-
 #pagebreak()
 
 === How do we call the function ```js NonStaged.sq```?
 
-Recall that during execution of the optimizer, we already compile the function ```js NonStaged.sq(x)``` to JavaScript.
+Recall that during execution of the optimizer, we already compile the function `NonStaged.sq(x)` to JavaScript.
 
-- Essentially we get the optimization for free in the static case (at no expense of code size)
+- Essentially we get the optimization for free in the static parameter case (at no expense of code size)
 
 #v(1fr)
 
@@ -1210,18 +1197,21 @@ Recall that during execution of the optimizer, we already compile the function `
 
 Before giving the formal rules, let's give a simple trace of shape propagation for pattern matching.
 
-```js
-class C(val n)
-staged module Simple with
-  fun f(x) =
-    let y
-    if x is C then y = x.n
-    else y = 0
-    y + 1
-  fun test()     = f(C(2))
-  fun test2(dyn) = f(C(dyn))
-  fun test3()    = f(0)
-```
+#block(below: 0pt)[
+  #set text(size: 0.85em)
+  ```js
+  class C(val n)
+  staged module Simple with
+    fun f(x) =
+      let y
+      if x is C then y = x.n
+      else y = 0
+      y + 1
+    fun test()     = f(C(2))
+    fun test2(dyn) = f(C(dyn))
+    fun test3()    = f(0)
+  ```
+]
 
 #pagebreak()
 
@@ -1246,7 +1236,6 @@ staged module Simple with
 
   #colbreak()
 
-  #set text(size: 0.85em)
   #ctxbox[
     `x` ↦ #shape("C(n: 2)")
     #only("2-3")[\ `y` ↦ #shape("⊥")]
@@ -1288,7 +1277,7 @@ staged module Simple with
 
   #colbreak()
 
-  #set text(size: 0.85em)
+  #set text(size: 0.9em)
   #ctxbox[
     `x` ↦ #shape("C(n: dyn)")
     #only("2-3")[\ `y` ↦ #shape("⊥")]
@@ -1330,7 +1319,7 @@ staged module Simple with
 
   #colbreak()
 
-  #set text(size: 0.85em)
+  #set text(size: 1em)
   #ctxbox[
     `x` ↦ #shape("0")
     #only("2-3")[\ `y` ↦ #shape("⊥")]
@@ -1357,14 +1346,14 @@ After all three calls, the staged module contains:
 
 ```js
 module Simple withs
-  fun f_C_Dyn(x) =
+  fun f_C_Dyn(x) =        // remove match
     let y
     y = x.n
-    y + 1                 // dyn case: code is kept
+    y + 1                 
   fun f_C_Lit2(x) = 3     // fully specialised
   fun f_Lit0()    = 1     // fully specialised
   fun test()      = 3
-  fun test2(dyn)  = f_C_Dyn(C$If2(dyn))
+  fun test2(dyn)  = f_C_Dyn(C(dyn))
   fun test3()     = 1
 ```
 
@@ -1376,29 +1365,32 @@ module Simple withs
 
 $"filter"$ removes impossible shapes from the branches of a pattern match.
 
-$
-  "filter"(s, \_) &= s
-    & quad "filter"(⟦iota_1⟧, iota_2) &= ⟦iota_1⟧ quad "if " iota_1 = iota_2 \
-  "filter"(⟦[overline(s_i)^n]⟧, \[\]^n) &= ⟦[overline(s_i)^n]⟧
-    & quad "filter"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= ⟦C(overline(n_i\:s_i)^m)⟧ \
-  "filter"(bold("dyn"), pi) &= "silh"(pi)
-    & quad "filter"(s_1 union s_2, pi) &= "filter"(s_1, pi) union "filter"(s_2, pi) \
-  "filter"(s, pi) &= bot quad "otherwise"
-$
+#block[
+  #set text(size: 0.85em)
+  $
+    "filter"(s, \_) &= s
+      & quad "filter"(⟦iota_1⟧, iota_2) &= ⟦iota_1⟧ quad "if " iota_1 = iota_2 \
+    "filter"(⟦[overline(s_i)^n]⟧, \[\]^n) &= ⟦[overline(s_i)^n]⟧
+      & quad "filter"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= ⟦C(overline(n_i\:s_i)^m)⟧ \
+    "filter"(bold("dyn"), pi) &= "silh"(pi)
+      & quad "filter"(s_1 union s_2, pi) &= "filter"(s_1, pi) union "filter"(s_2, pi) \
+    "filter"(s, pi) &= bot quad "otherwise"
+  $
+]
 
 #block(
   stroke: (top: 0.4pt + luma(180)),
   inset: (top: 0.5em, x: 0.4em),
   width: 100%,
 )[
-  #set text(size: 1em)
+  #set text(size: 0.8em)
   #text(fill: luma(110), style: "italic")[Example] \
   $
     "filter"(⟦C(n\: bold("dyn"))⟧, C) &= ⟦C(n\: bold("dyn"))⟧ \
     "filter"(⟦0⟧, C) &= bot \
     "filter"(⟦C(n\: bold("dyn"))⟧ union ⟦0⟧, C)
-      &= "filter"(⟦C(n\: bold("dyn"))⟧, C) union "filter"(⟦0⟧, C)
-      = ⟦C(n\: bold("dyn"))⟧ union bot
+      &= "filter"(⟦C(n\: bold("dyn"))⟧, C) union "filter"(⟦0⟧, C) \
+      &= ⟦C(n\: bold("dyn"))⟧ union bot
       = ⟦C(n\: bold("dyn"))⟧
   $
 ]
@@ -1406,19 +1398,40 @@ $
 
 #pagebreak()
 
+=== Silhouette Function (`silh`)
+
+$"silh"(pi)$ creates the shape of a pattern $pi$, with all sub-shapes set to $bold("dyn")$.
+
+#block[
+  #set text(size: 0.85em)
+  $
+    "silh"(iota) = ⟦iota⟧ quad
+    "silh"(C) = ⟦C(overline(bold("dyn"))^n)⟧ quad
+    "silh"(\[\]^n) = ⟦[overline(bold("dyn"))^n]⟧ quad
+    "silh"(\_) = bold("dyn")
+  $
+]
+
+Used in $"filter"(bold("dyn"), pi) = "silh"(pi)$: when the scrutinee is $bold("dyn")$, the branch becomes viable with the silhouette shape — a concrete class/literal shell wrapping $bold("dyn")$ sub-shapes.
+
+#pagebreak()
+
 === Branch Remainder (`rest`)
 
 $"rest"$ removes shapes already covered by a match pattern.
 
-$
-  "rest"(s, \_) &= bot
-    & quad "rest"(⟦iota_1⟧, iota_2) &= bot quad "if " iota_1 = iota_2 \
-  "rest"(⟦[overline(s_i)^n]⟧, \[\]^n) &= bot
-    & quad "rest"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= bot \
-  "rest"(bold("dyn"), pi) &= bold("dyn") quad "if " pi != \_
-    & quad "rest"(s_1 union s_2, pi) &= "rest"(s_1, pi) union "rest"(s_2, pi) \
-  "rest"(s, pi) &= s quad "otherwise"
-$
+#block[
+  #set text(size: 0.85em)
+  $
+    "rest"(s, \_) &= bot
+      & quad "rest"(⟦iota_1⟧, iota_2) &= bot quad "if " iota_1 = iota_2 \
+    "rest"(⟦[overline(s_i)^n]⟧, \[\]^n) &= bot
+      & quad "rest"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= bot \
+    "rest"(bold("dyn"), pi) &= bold("dyn") quad "if " pi != \_
+      & quad "rest"(s_1 union s_2, pi) &= "rest"(s_1, pi) union "rest"(s_2, pi) \
+    "rest"(s, pi) &= s quad "otherwise"
+  $
+]
 
 #block(
   stroke: (top: 0.4pt + luma(180)),
@@ -1437,15 +1450,109 @@ $
 
 #pagebreak()
 
+== Non Termination 1
+
+Consider fibonacci number:
+
+```js
+staged module Staged with
+  fun fib(n) = if n is 
+    1 then 1
+    2 then 1
+    n then fib(n - 1) + fib(n - 2)
+```
+
+With `n` ↦ #shape("dyn"), every branch is viable. The recursive call `fib(n - 1)` has argument shape #shape("dyn"), so shape propagation recurses forever, even though the original program terminates for valid inputs.
 
 
-=== Dynamic Dispatching
+
+#pagebreak()
+
+=== Solution: Stub Insertion
+
+Before propagating into `fib(dyn)`, we *pre-insert a stub* into the cache:
+
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
+)[
+  `fib_Dyn` ↦ ( , #shape("dyn")) #h(1fr) _(stub, no specialized block, only return shape)_
+]
+
+#v(0.5em)
+
+Now when propagating the `n then fib(n - 1) + fib(n - 2)` arm:
+
++ `fib(n - 1)` has argument shape #shape("dyn") — matches the existing stub → rewritten to `fib_Dyn(n - 1)`.
++ Return shape #shape("dyn") is read from the stub; recursion stops.
++ `fib(n - 2)` likewise hits the stub → rewritten to `fib_Dyn(n - 2)`.
++ Result shape of the arm: #shape("dyn") `+` #shape("dyn") = #shape("dyn").
+
+#pagebreak()
+The completed specialised function will be
+
+```js
+fun fib_Dyn(n) = if n is
+  1 then 1
+  2 then 1
+  n then fib_Dyn(n - 1) + fib_Dyn(n - 2)
+```
+
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
+)[
+  `fib_Dyn` ↦ (Specialized Block, #shape("dyn"))
+]
+
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt, width: 100%,
+)[
+  #text(weight: "bold")[Remark.] Stub insertion only guarantees termination of the first stage (shape propagation) when *the original program terminates*. If the source program itself does not terminate, the optimizer running in the first stage is not guaranteed to terminate either.
+]
+
+== Non Termination 2
+
+Consider:
+
+```js
+staged module NonTermination with
+  fun f(x, y) = if x == 
+    y then 0
+    else f(x, y + 1)
+```
+
+With `x` ↦ #shape("dyn") and `y` ↦ #shape("0"), the scrutinee `x == y` has shape #shape("dyn"), so both branches are viable. The recursive call `f(x, y + 1)` gives `y` shape #shape("1"), then #shape("2")... 
+
+shape propagation diverges :(
+
+#pagebreak()
+
+=== Solution: Context Decay
+
+Before processing the branches of `if x == y`, since the scrutinee shape is #shape("dyn"), we *decay* the context: every path that influenced the scrutinee is refined to #shape("dyn").
+
+Here `x == y` depends on `x` and `y`, so both are decayed to #shape("dyn") before entering the branches.
+
+#block[
+  #set text(size: 0.85em)
+  $
+    "decay"(Gamma, p, s) &= Gamma quad "if " p != x "for some variable" x "or" s != bold("dyn") \
+    "decay"(Gamma, x, bold("dyn")) &= Gamma attach(overline(p_i mapsto bold("dyn")), tr: p_i in "alias"("clos"(x)))
+  $
+]
+
+With `y` ↦ #shape("dyn") after decay, `y + 1` ↦ #shape("dyn") too — the recursive call always hits a stable shape, so propagation terminates.
+
+
+
+== Dynamic Dispatching (Example)
 When a method is called on a value with a *union shape*, we split by class and dispatch separately.
 
 #local(lang-format: (_, _, _) => [],
 ```js
-staged class B1(val y) with  fun call(x) = x + 2 + y
-staged class B2(val y) with  fun call(x) = x + y
+staged class B1(val y) with 
+  fun call(x) = x + 2 + y
+staged class B2(val y) with 
+  fun call(x) = x + y
 staged module M with
   fun twice(f, x) = f.call(f.call(x))
   fun pick(x, y, b) = if b then x else y
@@ -1465,11 +1572,12 @@ staged module M with
   Specialise `f` with `b` ↦ #shape("dyn").
 
   #only("2-")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
+  #[#set text(size: 0.85em)
   ```js
   fun f(b) =
     let m = pick(new B1(2),new B2(3),b)
     twice(m, 5)
-  ```
+  ```]
 
   #colbreak()
 
@@ -1494,11 +1602,12 @@ staged module M with
   #only("2")[#codly(highlights: ((line: 1, start: 5, end: 17, fill: yellow),))]
   #only("3")[#codly(highlights: ((line: 2, start: 6, fill: yellow),))]
   #only("4")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
+  #[#set text(size: 0.85em)
   ```js
   fun pick(x, y, b) =
     if b then x
     else y
-  ```
+  ```]
 
   #colbreak()
 
@@ -1528,11 +1637,12 @@ staged module M with
 
   #only("1-2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
   #only("3-")[#codly(highlights: ((line: 3, start: 3, fill: yellow),))]
+  #[#set text(size: 0.85em)
   ```js
   fun f(b) =
     let m = pick(new B1(2), new B2(3), b)
     twice(m, 5)
-  ```
+  ```]
 
   #colbreak()
 
@@ -1556,6 +1666,7 @@ staged module M with
 
   #only("2")[#codly(highlights: ((line: 2, start: 3, fill: yellow),))]
   #only("3")[#codly(highlights: ((line: 3, start: 9, end: 18, fill: yellow),))]
+  #[#set text(size: 0.85em)
   ```js
   fun twice(f, x) =
     let tmp
@@ -1569,7 +1680,7 @@ staged module M with
     fun call(x) = x + 2 + y
   class B2(y) with 
     fun call(x) = x + y
-  ```
+  ```]
 
   #colbreak()
 
@@ -1596,6 +1707,7 @@ staged module M with
   === Trace C (continued): second call
 
   #codly(highlights: ((line: 3, start: 3, end: 7, fill: yellow),))
+  #[#set text(size: 0.85em)
   ```js
   fun twice(f, x) =
     let tmp
@@ -1607,7 +1719,7 @@ staged module M with
   ```js
   class B1(y) with fun call(x) = x + 2 + y
   class B2(y) with fun call(x) = x + y
-  ```
+  ```]
 
   #colbreak()
 
