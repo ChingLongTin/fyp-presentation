@@ -59,9 +59,10 @@ Programmers often write code in a clear, general style, even when parts of it co
 
   #colbreak()
 
-  *can actually be written as*
+  *... can actually be written as*
   ```js
-  fun dotWith3(v) = v(0) + 2 * v(2)
+  fun dotWith3(v) =
+    v(0) + 2 * v(2)
   ```
 ]
 
@@ -73,11 +74,6 @@ The recursion, the pattern matching, the multiplication are all known at compile
   width: 100%,
   [*Goal:* let the programmer keep the abstract version, and have the compiler peel away the static layer automatically.]
 )
-
-
-
-
-
 
 = Literature Survey
 
@@ -104,7 +100,6 @@ fun power2 = .! .<(x => .~(power(2, .<x>.)))>.
 
 In here, green annotates code to be executed in the next stage, and gray executed in the current stage.
 
-
 #pagebreak()
 
 #local(number-format: none, lang-format: (_, _, _) => [], [
@@ -120,9 +115,7 @@ In here, green annotates code to be executed in the next stage, and gray execute
   ```
 
   During evaluation, we able to pre-compute certain parts of the code, reducing runtime.
-
 ])
-
 
 #pagebreak()
 
@@ -205,6 +198,8 @@ fun power2 = x => x * x * 1
   ```
 ]
 
+#pagebreak()
+
 Traditional Multi-Stage Programming tracks types.
 
 Even if `x` has a known class shape, we cannot remove matching arms.
@@ -237,7 +232,7 @@ class Bar$2$3
 
 = Overview
 
-== Approach in High Level
+== High-Level Approach
 
 #pagebreak()
 
@@ -272,7 +267,7 @@ The output of executing the program is
 ```js
 module M with
   fun dotWith3(v) = v.(0) + 2 * v.(2)
-  ... with more specialized functions ...
+  // ... with more specialized functions ...
 ```
 
 which the user can import.
@@ -296,7 +291,6 @@ Two phases: Instrumentation / Insert Optimizer
 === Lowering Pass
 
 We implement staging a transformation from Scala Block $=>$ Scala Block.
-// TODO
 
 #pagebreak()
 
@@ -1769,14 +1763,14 @@ After propagation, `M` and the staged classes contain:
   #colbreak()
 
   ```
-    fun twice1(f) =
-      let tmp
-      if f is
-        B1 then tmp = f.call1()
-        B2 then tmp = f.call1()
-      if f is
-        B1 then f.call2(tmp)
-        B2 then f.call2(tmp)
+  fun twice1(f) =
+    let tmp
+    if f is
+      B1 then tmp = f.call1()
+      B2 then tmp = f.call1()
+    if f is
+      B1 then f.call2(tmp)
+      B2 then f.call2(tmp)
   ```
 
   #colbreak() 
