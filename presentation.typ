@@ -284,12 +284,98 @@ Two phases: Instrumentation / Shape Propagation
 We implement staging a transformation from Scala Block $=>$ Scala Block.
 // TODO
 
-#slide[#align(center)[#image("pipeline-lowering-1.svg", width: 100%)]]
-#slide[#align(center)[#image("pipeline-lowering-2.svg", width: 100%)]]
-#slide[#align(center)[#image("pipeline-lowering-3.svg", width: 100%)]]
-#slide[#align(center)[#image("pipeline-lowering-4.svg", width: 100%)]]
-#slide[#align(center)[#image("pipeline-lowering-5.svg", width: 100%)]]
-#slide[#align(center)[#image("pipeline-lowering-6.svg", width: 100%)]]
+#slide[
+  #align(center)[#image("pipeline-lowering-1.svg", width: 100%)]
+  #align(center)[#block(width: 50%)[
+  #text(size: 0.9em)[*Source (MLscript)*]
+  #codly(number-format: none)
+  #set text(size: 1em)
+  ```js
+  if C(0) is
+    Int  then "Int"
+    C(n) then "C(" + n + ")"
+    else "Unknown"
+  ```
+  ]]
+]
+
+#slide[
+  #align(center)[#image("pipeline-lowering-2.svg", width: 100%)]
+  #align(center)[#block(width: 50%)[
+  #text(size: 0.9em)[*Block*]
+  #codly(number-format: none)
+  #set text(size: 0.6em)
+  ```scala
+  Scoped([scrut, n, arg, tmp],
+    Assign(scrut, Call(C, [0])),
+    Match(Ref(scrut), [
+      Arm(Cls(Int), Ret("Int")),
+      Arm(Cls(C),
+        Assign(arg, Select(scrut, "n")),
+        Assign(n,   Ref(arg)),
+        Assign(tmp, Call("+", ["C(", n])),
+        Ret(Call("+", [tmp, ")"]))
+    ], Ret("Unknown")))
+  ```
+  ]]
+]
+
+#slide[
+  #align(center)[#image("pipeline-lowering-3.svg", width: 100%)]
+  #align(center)[#block(width: 50%)[
+  #text(size: 0.9em)[*Staged Block*]
+  #codly(number-format: none)
+  #set text(size: 0.6em)
+  ```js
+  Scoped([scrut, n, arg, tmp],
+    Assign(scrut, Call(C, [0])),
+    Match(Ref(scrut), [
+      Arm(Cls(Int), Ret("Int")),
+      Arm(Cls(C),
+        Assign(arg, Select(scrut, "n")),
+        Assign(n,   Ref(arg)),
+        Assign(tmp, Call("+", ["C(", n])),
+        Ret(Call("+", [tmp, ")"]))
+    ], Ret("Unknown")))
+  ```
+  ]]
+]
+
+#slide[
+  #align(center)[#image("pipeline-lowering-4.svg", width: 100%)]
+  #align(center)[#block(width: 50%)[
+  #text(size: 0.9em)[*Optimized Staged Block*]
+  #codly(number-format: none)
+  #set text(size: 0.9em)
+  ```js
+  Block.Ret("C(0)")
+  ```
+  ]]
+]
+
+#slide[
+  #align(center)[#image("pipeline-lowering-5.svg", width: 100%)]
+  #align(center)[#block(width: 50%)[
+  #text(size: 0.9em)[*Generated MLscript*]
+  #codly(number-format: none)
+  #set text(size: 0.9em)
+  ```js
+  "C(0)"
+  ```
+  ]]
+]
+
+#slide[
+  #align(center)[#image("pipeline-lowering-6.svg", width: 100%)]
+  #align(center)[#block(width: 50%)[
+  #text(size: 0.9em)[*Generated JS*]
+  #codly(number-format: none)
+  #set text(size: 0.9em)
+  ```js
+  "C(0)"
+  ```
+  ]]
+]
 
 
 = Staging
