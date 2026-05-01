@@ -320,6 +320,8 @@ class Bar$2$3
   Either we perform class splitting, or we do not specialise inherited classes.
 ])
 
+== Functions to Classes
+// TODO
 
 = Overview
 
@@ -527,9 +529,6 @@ if C(0) is
 
 = Staging
 
-== Function-to-Class Transformation
-
-Simplify lambda functions by turning them into classes
 
 == Staging Block
 
@@ -730,6 +729,8 @@ For any Scala Block data, we can recreate the same structure within MLscript whi
 
 Insert some auxiliary helper variables/functions to the module for shape propagation.
 
+// TODO: DEMO HERE
+
 #alternatives[
   ```js
   staged module Math with
@@ -774,9 +775,10 @@ Insert some auxiliary helper variables/functions to the module for shape propaga
   width: 100%, [#text(size: 0.8em, weight: "bold")[#title] \ #body]
 )
 
+== Function-to-Class Transformation
 
-
-
+Simplify lambda functions by turning them into classes
+// TODO
 
 = Shape Propagation
 
@@ -1444,7 +1446,7 @@ Before giving the formal rules, let's give a simple trace of shape propagation f
 After all three calls, the staged module contains:
 
 ```js
-module Simple withs
+module Simple with
   fun f_C_Dyn(x) =        // remove match
     let y
     y = x.n
@@ -2070,6 +2072,7 @@ Benchmark: Transform 16k random coordinates using a known transformation matrice
 
 === Time
 
+// TODO: make graph
 Unstaged: ~2s
 
 Time: about 2x (from 2s to 1s, eh...)
