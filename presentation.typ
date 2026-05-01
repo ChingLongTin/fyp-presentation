@@ -36,46 +36,45 @@
 6. Host the web-demo on github page maybe
 7. Mention the 'stub' thing
 8. Research some more related works.
+9. Explain why we recreate the Block data structure within MLScript instead of directly manipulating the Scala Block (Maintainability?)
 */
 
 = Motivation
 
 == Compile-Time vs. Run-Time Work
 
-#slide[
-  Programmers often write code in a clear, abstract style, even when parts of it could be computed during compilation.
+Programmers often write code in a clear, general style, even when parts of it could be computed during compilation.
 
-  #columns(2)[
-    *Original program*
-    ```js
-    fun dot(xs, ys) =
-      if xs is
-        Nil then 0
-        Cons(x, xt) and ys is
-          Cons(y, yt) then
-            x * y + dot(xt, yt)
+#columns(2)[
+  *Original program*
+  ```js
+  fun dot(xs, ys, i) =
+    if xs.length == i then 0
+    else xs.(i) * ys.(i)
+      + dot(xs, ys, i + 1)
 
-    fun dotWith3(v) =
-      dot([1, 0, 2], v)
-    ```
+  fun dotWith3(v) =
+    dot([1, 0, 2], v, 0)
+  ```
 
-    #colbreak()
+  #colbreak()
 
-    *Residual program* (after specialising on `[1, 0, 2]`)
-    ```js
-    fun dotWith3(v) = v(0) + 2 * v(2)
-    ```
-  ]
-
-  The recursion, the pattern matches, the multiplication by `0` — all known at compile time. The residual program contains only the work that genuinely depends on the runtime input `v`.
-
-  #v(0.5em)
-  #block(
-    fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
-    width: 100%,
-    [*Goal:* let the programmer keep the abstract version, and have the compiler peel away the static layer automatically.]
-  )
+  *can actually be written as*
+  ```js
+  fun dotWith3(v) = v(0) + 2 * v(2)
+  ```
 ]
+
+The recursion, the pattern matches, the multiplication by `0` — all known at compile time. The residual program contains only the work that genuinely depends on the runtime input `v`.
+
+#v(0.5em)
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+  width: 100%,
+  [*Goal:* let the programmer keep the abstract version, and have the compiler peel away the static layer automatically.]
+)
+
+= Literature Survey
 
 == Multi-Stage Programming
 Well-known optimization technique @taha2004gentle
@@ -221,9 +220,50 @@ Under single inheritance, matching arms runs into problems. @shali2011hybrid
 class Foo$1$2 extends Bar
 class Bar$2$3
 ```
-
-
 = Overview
+
+== Approach in High Level
+
+#slide[
+  Start with an ordinary module:
+
+  ```js
+  module M with
+    fun dot(xs, ys, i) =
+      if xs.length == i then 0
+      else xs.(i) * ys.(i) + dot(xs, ys, i + 1)
+    fun dotWith3(v) = dot([1, 0, 2], v, 0)
+  ```
+]
+
+#slide[
+  Mark it as `staged`: the module now acts as a *code generator*:
+  at compile time it specialises calls on known argument shapes and emits
+  a residual module containing only the work that depends on runtime input.
+
+  #codly(highlights: ((line: 1, start: 1, end: 6, fill: yellow),))
+  ```js
+  staged module M with
+    fun dot(xs, ys, i) =
+      if xs.length == i then 0
+      else xs.(i) * ys.(i) + dot(xs, ys, i + 1)
+    fun dotWith3(v) = dot([1, 0, 2], v, 0)
+  ```
+]
+
+#slide[
+  After staging,
+  We are left with an ordinary (non-staged) module containing just
+  the residual program that the user can use
+
+  ```js
+  module M with
+    fun dotWith3(v) = v.(0) + 2 * v.(2)
+    ... with more specialized functions ...
+  ```
+
+  Hence, our approach is a combination of *metaprogramming* (code generator) and *specialization* (generation of specialized functions).
+]
 
 == MLscript Compiler
 
@@ -233,60 +273,26 @@ class Bar$2$3
 - #strong[Lowering]: converts AST to a simplified format
 - Codegen: Turn AST into executable code (JavaScript).
 
-=== Lowering Pass
+== Recipe
 
-
-We implement staging a transformation from Scala Block $=>$ Scala Block.
 #align(center)[#image("pipeline-lowering.svg", width: 100%)]
-||||||| 05b79df
-
-== Approach
 
 Two phases: Instrumentation / Shape Propagation
 
+=== Lowering Pass
+
+We implement staging a transformation from Scala Block $=>$ Scala Block.
 // TODO
 
-== Shape definition
-
-// rhs are all Results, parameters are all Paths
-We focus on tracking the shape of the Paths and Results.
-
-$ s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot | s union s $
-
-```js
-fun f(p, cond) =
-  let a = 42
-  let b = new C(p, 2)
-  let c = if cond then [1, 2, 3] else C(1, 2)
-  let d = if b is C then 0 else 1
-```
+#slide[#align(center)[#image("pipeline-lowering-1.svg", width: 100%)]]
+#slide[#align(center)[#image("pipeline-lowering-2.svg", width: 100%)]]
+#slide[#align(center)[#image("pipeline-lowering-3.svg", width: 100%)]]
+#slide[#align(center)[#image("pipeline-lowering-4.svg", width: 100%)]]
+#slide[#align(center)[#image("pipeline-lowering-5.svg", width: 100%)]]
+#slide[#align(center)[#image("pipeline-lowering-6.svg", width: 100%)]]
 
 
-
-= Implementation
-
-== What's this for?
-
-#slide[
-  === Example 1
-
-  ```js
-  staged module Math with
-    fun pow(@dynamic x, n) = if n is
-      0 then 1
-      else x * pow(x, n-1)
-    fun sq(x) = pow(x, 2)
-  ```
-
-  #codly(skips:((1,4),))
-  ```js
-    fun sq(x) = x * x * 1
-  ```
-
-  This example touches on shape tracking, match arm removal, and nested specialization.
-]
-
-== Staging
+= Staging
 
 #slide[
 ```scala
@@ -303,7 +309,7 @@ class Block with
     Assign(lhs, rhs, rest)
 ```
 
-For any Scala Block data, we can recreate the same structure with #strong([Staged Block]).
+For any Scala Block data, we can recreate the same structure which we called #strong([Staged Block]).
 ]
 
 #slide[
@@ -352,6 +358,7 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
   #columns(2)[
     ```js Value.Lit(lit)```
 
+    #codly(number-format: none)
     ```js
     ValueLit(lit)
     ```
@@ -363,6 +370,7 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
     #alternatives[
 
     ```js Symbol(name)```
+    #codly(number-format: none)
     ```js
     Symbol(name)
     ```
@@ -375,7 +383,7 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
     ][
     ```js Value.Ref(sym)```
 
-    #codly(highlights: (
+    #codly(number-format: none, highlights: (
       (line: 1, start: 9, fill: blue),
     )) 
     ```js
@@ -390,7 +398,7 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
   #only("2-")[
   ```js Select(qual, name)```
 
-  #codly(highlights: (
+  #codly(number-format: none, highlights: (
     (line: 1, start: 9, fill: blue),
     (line: 2, start: 9, fill: blue),
   ))
@@ -407,7 +415,7 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
 #slide[
   ```js Tuple([x0, x1, ...])```
 
-  #codly(skips: ((3, 1), ), highlights: (
+  #codly(number-format: none, skips: ((3, 1), ), highlights: (
     (line: 1, start: 10, fill: blue),
     (line: 2, start: 10, fill: blue),
   ))
@@ -420,7 +428,7 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
   The other Scala Block cases are similar, staging the parameters of the Scala Block by induction and recreating the corresponding Staged Block counterpart.
 ]
 
-=== Staging Symbols
+== Staging Symbols
 
 #alternatives-match((
   "1": [
@@ -457,7 +465,7 @@ For any Scala Block data, we can recreate the same structure with #strong([Stage
     let x = Symbol("x")
     // let x1 = Symbol("x")
     Call(ValueRef(Symbol("+")), [[ValueRef(x), ValueRef(x)]])
-  ```
+    ```
   ],
   "3": [
     For class and module symbols, we need to cache and use first instance of a symbol within the staged code.
@@ -487,9 +495,82 @@ staged module Math with
     sq_gen(dyn)
 ```
 
-== Shape Propagation
-
 #let shape(s) = box[⟦#raw(s)⟧]
+
+#let ctxbox(body) = block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.6em, radius: 4pt,
+  width: 100%, [#text(size: 0.8em, weight: "bold")[ctx] \ #body]
+)
+
+= Shape Propagation
+
+== Shape Definition
+
+// rhs are all Results, parameters are all Paths
+We focus on tracking the shape of the Paths and Results.
+
+$ s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot | s union s $
+
+```js
+fun f(p, cond) =
+  let a = 42
+  let b = new C(p, 2)
+  let c = if cond then [1, 2, 3] else C(1, 2)
+  let d = if b is C then 0 else 1
+```
+
+#slide[
+  === Block in BNF 
+
+  #set text(size: 0.88em)
+  #let lbl(s) = text(style: "italic", fill: luma(110), size: 0.95em)[#s]
+
+  // Header rows: terminal categories paired side-by-side, like the paper.
+  #grid(
+    columns: (1fr, 1fr),
+    column-gutter: 1em,
+    row-gutter: 0.85em,
+    align: left + horizon,
+
+    [#lbl[Symbol] #h(0.6em) $x, y, z$],
+    [#lbl[Literal] #h(0.6em) $iota$],
+
+    [#lbl[Function definition] #h(0.6em) $bold("fun") med f(overline(x_i)^n) = b$],
+    [#lbl[Plain class definition] #h(0.6em) $bold("class") med C(overline(bold("val") med n))$],
+
+    grid.cell(colspan: 2)[
+      #lbl[Staged module definition] #h(0.6em) $bold("staged") med bold("module") med M med bold("with") med bold("fun") med f(overline(x_i)^n) = b$
+    ],
+  )
+
+  #v(0.4em)
+
+  #grid(
+    columns: (1fr, auto, auto, auto, 1fr),
+    column-gutter: (0pt, 0.6em, 0.5em, 0pt),
+    row-gutter: 0.85em,
+    align: (right + horizon, right + horizon, center + horizon, left + horizon, left + horizon),
+
+    [], lbl[Path], $p$,
+      $::= iota | x | p.n$, [],
+    [], lbl[Result], $r$,
+      $::= p | f(overline(p)) | bold("new") med C(overline(p)) | [overline(p)]$, [],
+    [], lbl[Match pattern], $pi$,
+      $::= iota | C | \[\]^n | \_$, [],
+    [], lbl[Match arm], $kappa$,
+      $::= pi #h(0.4em) bold("then") #h(0.4em) b$, [],
+    [], lbl[Non-tail block], $B$,
+      $::= epsilon | bold("if") med p med bold("is") med overline(kappa); B | x = r; B | bold("let") med x; B$, [],
+    [], lbl[Block], $b$,
+      $::= bold("return") med r | bold("end") | B; med b$, [],
+    [], lbl[Shape], $s$,
+      $::= ⟦iota⟧ | bold("dyn") | ⟦[overline(s)]⟧ | ⟦C(overline(n\:s))⟧ | bot | s union s$, [],
+    [], lbl[Shape context], $Gamma$,
+      $::= epsilon | Gamma, p mapsto s quad (p eq.not x)$, [],
+  )
+]
+
+== Shape Propagation (Example)
 
 #slide[
   A *Shape* captures what we statically know about a value at compile time.
@@ -521,16 +602,399 @@ staged module Math with
   )
 ]
 
+#slide[
+  === A First Taste
+
+  A tiny program, propagating shapes by hand:
+
+  ```js
+  staged module M with
+    fun add1(x) = x + 1
+    fun test()  = add1(2)
+  ```
+
+  #v(0.4em)
+  Walking through `test()`:
+  #set text(size: 0.92em)
+  + Argument `2` has shape #shape("2") (a literal).
+  + Specialise `add1` with `x` ↦ #shape("2"); inside the body, `x` looks up #shape("2") in the context.
+  + `x + 1` folds: #shape("2") `+ 1` $arrow$ #shape("3").
+  + Cache the result as `add1_Lit2() = 3`; rewrite the call site `add1(2)` to `add1_Lit2()`.
+
+  #v(0.4em)
+  Final shape of `test()`: #shape("3"). Body collapses to a constant.
+]
+
+== Shape Propagation (Formalization)
+#slide[
+  === Shape of Path ($Gamma tack.r p => s$)
+
+  We evaluate paths $p$ to their shapes $s$.
+
+  #let rule(name, premises, conclusion) = {
+    set align(center)
+    stack(dir: ttb, spacing: 0.6em,
+      premises,
+      box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em),
+        conclusion,
+      ),
+    )
+  }
+
+  #let example(snippet, body) = block(
+    stroke: (top: 0.4pt + luma(180)),
+    inset: (top: 0.5em, x: 0.4em),
+    width: 100%,
+  )[
+    #set text(size: 0.88em)
+    #set align(left)
+    #text(fill: luma(110), style: "italic")[Example] \
+    #local(number-format: none, snippet)
+    #body
+  ]
+
+  #v(1fr)
+  #align(center)[
+    #set text(size: 0.92em)
+    #grid(columns: (1fr, 1fr, 1fr), column-gutter: 1.5em, row-gutter: 0.8em,
+      align: (_, row) => if row == 0 { bottom + center } else { top + center },
+      rule([Lit], $ $, $Gamma tack.r iota => ⟦iota⟧$),
+      rule([Path], $(p mapsto s) in Gamma quad s eq.not bot$, $Gamma tack.r p => s$),
+      rule([Sel], $p in.not "dom"(Gamma) quad Gamma tack.r p => s$, $Gamma tack.r p.n => "sel"(s, ⟦n⟧)$),
+      example(```js
+      42
+      ```)[
+        $Gamma = epsilon$ \
+        $epsilon tack.r 42 => ⟦42⟧$
+      ],
+      example(```js
+      x
+      ```)[
+        $Gamma = x mapsto ⟦C(n\:⟦1⟧)⟧$ \
+        $Gamma tack.r x => ⟦C(n\:⟦1⟧)⟧$
+      ],
+      example(```js
+      x.n
+      ```)[
+        $Gamma = x mapsto ⟦C(n\:⟦1⟧)⟧$ \
+        $Gamma tack.r x.n => ⟦1⟧$
+      ],
+    )
+  ]
+
+  #v(1fr)
+  #align(center)[
+    #text(size: 0.9em, fill: luma(110))[
+      Reminder: $p ::= iota | x | p.n$
+    ]
+  ]
+]
 
 #slide[
-  Before the formal rules, let's give a simple trace of shape propagation.
+  === Shape Selection (`sel`)
+
+  $"sel"$ computes the shape of a selection.
+
+  #v(1fr)
+  #set text(size: 1em)
+  $
+    "sel"(⟦C(overline(n_i\:s_i))⟧, ⟦n_i⟧) &= s_i
+      & quad "sel"(bold("dyn"), ⟦n_i⟧) &= bold("dyn") \
+    "sel"(⟦[overline(s_i)^(i in 0..n)]⟧, ⟦i⟧) &= s_i
+      & quad "sel"(s_1 union s_2, s) &= "sel"(s_1, s) union "sel"(s_2, s) \
+    "sel"(s_1, s_2) &= bold("err") quad "otherwise"
+  $
+
+  #block(
+    stroke: (top: 0.4pt + luma(180)),
+    inset: (top: 0.5em, x: 0.4em),
+    width: 100%,
+  )[
+    #set text(size: 1em)
+    #text(fill: luma(110), style: "italic")[Example] \
+    $
+      "sel"(⟦[1,2]⟧ union ⟦[2,3,4]⟧, ⟦1⟧)
+        &= "sel"(⟦[1,2]⟧, ⟦1⟧) union "sel"(⟦[2,3,4]⟧, ⟦1⟧) \
+        &= ⟦2⟧ union ⟦3⟧
+    $
+  ]
+  
+  #v(1fr)
+]
+
+#slide[
+  === Shape of Result (`sor`: $Gamma tack.r r ~> r' => s$)
+
+  We optimize block and track shapes simultaneously: $r$ becomes $r'$ with shape $s$.
+
+  #let rule(name, premises, conclusion) = {
+    set align(center)
+    stack(dir: ttb, spacing: 0.6em,
+      premises,
+      box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em),
+        conclusion,
+      ),
+    )
+  }
+
+  #let example(snippet, body) = block(
+    stroke: (top: 0.4pt + luma(180)),
+    inset: (top: 0.5em, x: 0.4em),
+    width: 100%,
+  )[
+    #set text(size: 0.85em)
+    #set align(left)
+    #text(fill: luma(110), style: "italic")[Example] \
+    #local(number-format: none, snippet)
+    #body
+  ]
+
+  #v(1fr)
+  #align(center)[
+    #set text(size: 0.78em)
+    #grid(columns: (1fr, 1fr, 1fr), column-gutter: 0.8em, row-gutter: 0.9em,
+      align: (_, row) => if row == 0 { bottom + center } else { top + center },
+      rule([Path],
+        $Gamma tack.r p => s$,
+        $Gamma tack.r p ~> p => s$),
+      rule([Tuple],
+        $Gamma tack.r p_i => s_i$,
+        $Gamma tack.r [overline(p_i)^n] ~> [overline(p_i)^n] => ⟦[overline(s_i)^n]⟧$),
+      rule([New],
+        $Gamma tack.r p_i => s_i$,
+        $Gamma tack.r bold("new") med C(overline(p_i)) ~> bold("new") med C(overline(p_i)) => ⟦C(overline(n_i\:s_i))⟧$),
+      example(```js
+      x
+      ```)[
+        $Gamma = x mapsto ⟦1⟧$ \
+        $Gamma tack.r x ~> x => ⟦1⟧$
+      ],
+      example(```js
+      [x, y]
+      ```)[
+        $Gamma = x mapsto ⟦1⟧, y mapsto ⟦2⟧$ \
+        $Gamma tack.r [x,y] ~> [x,y] => ⟦[⟦1⟧, ⟦2⟧]⟧$
+      ],
+      example(```js
+      new Pair(x, y)
+      ```)[
+        $Gamma = x mapsto ⟦1⟧, y mapsto ⟦2⟧$ \
+        $Gamma tack.r bold("new") med "Pair"(x,y) => ⟦"Pair"(a\:⟦1⟧, b\:⟦2⟧)⟧$
+      ],
+    )
+  ]
+  #v(1fr)
+  #align(center)[
+    #text(size: 0.9em, fill: luma(110))[
+      Reminder: $r ::= p | [overline(p)] | bold("new") med C(overline(p)) | f(overline(p))$
+    ]
+  ]
+]
+
+#slide[
+  === Shape of Result (`sor`) — Staged Application
+
+  #let rule(name, premises, conclusion) = {
+    set align(center)
+    stack(dir: ttb, spacing: 0.6em,
+      premises,
+      box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 0.4em),
+        conclusion,
+      ),
+    )
+  }
+
+  When $f$ is *staged*, we recursively specialise its body on the argument shapes.
+
+  #v(1fr)
+  #align(center)[
+    #set text(size: 0.95em)
+    #stack(dir: ttb, spacing: 0.6em,
+      $f " is staged" quad Gamma tack.r p_i => s_i quad f_"gen" thin (overline(p), overline(s)) = (r', s)$,
+      box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 6em),
+        $Gamma tack.r f(overline(p_i)) ~> r' => s$,
+      ),
+    )
+  ]
+  #v(0.8em)
+
+  #block(
+    stroke: (top: 0.4pt + luma(180)),
+    inset: (top: 0.5em, x: 0.4em),
+    width: 100%,
+  )[
+    #set text(size: 0.85em)
+    #text(fill: luma(110), style: "italic")[Example] \
+    #local(number-format: none,
+      ```js
+      staged module Staged with
+        fun pyth(x, y) = x * x + y * y
+        fun test() = pyth(2, 3)
+      ```
+    )
+    Specialise $"pyth"_"gen" thin (⟦2⟧, ⟦3⟧)$ $arrow$ produces `pyth_Lit2_Lit3() = 13`, shape $⟦13⟧$. \
+    Conclusion: $epsilon tack.r "pyth"(2,3) ~> 13 => ⟦13⟧$
+  ]
+
+  #v(1fr)
+  #align(center)[
+    #text(size: 0.9em, fill: luma(110))[
+      Reminder: $r ::= p | [overline(p)] | bold("new") med C(overline(p)) | f(overline(p))$
+    ]
+  ]
+]
+
+#slide[
+  === Shape of Result (`sor`) — After Specialisation
+
+  After propagation, the call site `pyth(2, 3)` is rewritten to its cached variant.
+
+  #v(1fr)
+  #align(center)[
+    #set text(size: 0.95em)
+    #stack(dir: ttb, spacing: 0.6em,
+      $f " is staged" quad Gamma tack.r p_i => s_i quad f_"gen" thin (overline(p), overline(s)) = (r', s)$,
+      box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 6em),
+        $Gamma tack.r f(overline(p_i)) ~> r' => s$,
+      ),
+    )
+  ]
+  #v(0.8em)
+
+  #block(
+    stroke: (top: 0.4pt + luma(180)),
+    inset: (top: 0.5em, x: 0.4em),
+    width: 100%,
+  )[
+    #set text(size: 0.85em)
+    #text(fill: luma(110), style: "italic")[Example] \
+    #local(number-format: none,
+      ```js
+      staged module Staged with
+        fun pyth_Lit2_Lit3() = 13
+        fun test() = pyth_Lit2_Lit3()
+      ```
+    )
+  ]
+
+  #v(1fr)
+  #align(center)[
+    #text(size: 0.9em, fill: luma(110))[
+      Reminder: $r ::= p | [overline(p)] | bold("new") med C(overline(p)) | f(overline(p))$
+    ]
+  ]
+]
+
+#slide[
+  === Shape of Result (`sor`) — Non-Staged Application
+
+  #let rule(name, premises, conclusion) = {
+    set align(center)
+    stack(dir: ttb, spacing: 0.6em,
+      premises,
+      box(stroke: (top: 0.6pt), inset: (top: 0.4em, x: 2em),
+        conclusion,
+      ),
+    )
+  }
+
+  When $f$ is *non-staged*, we cannot peek into its body. Two sub-cases.
+
+  #v(1fr)
+  #align(center)[
+    #set text(size: 0.78em)
+    #grid(columns: (1fr, 1fr), column-gutter: 1.2em, row-gutter: 0.9em,
+      align: (_, row) => if row == 0 { bottom + center } else { top + center },
+      rule([StaticApp],
+        stack(dir: ttb, spacing: 0.45em,
+          $f " is non-staged" quad Gamma tack.r p_i => s_i$,
+          $forall i. med "static"(s_i)$,
+          $f_"imp" thin (overline("valOf"(s))) = (r, s)$,
+        ),
+        $Gamma tack.r f(overline(p_i)) ~> r => s$),
+      rule([App-Dyn],
+        stack(dir: ttb, spacing: 0.45em,
+          $f " is non-staged" quad Gamma tack.r p_i => s_i$,
+          $exists i. med not "static"(s_i)$,
+        ),
+        $Gamma tack.r f(overline(p_i)) ~> f(overline(p_i)) => bold("dyn")$),
+    )
+  ]
+  #v(0.6em)
+
+  #grid(columns: (1fr, 1fr), column-gutter: 1em,
+    block(
+      stroke: (top: 0.4pt + luma(180)),
+      inset: (top: 0.5em, x: 0.4em),
+      width: 100%,
+    )[
+      #set text(size: 0.78em)
+      #text(fill: luma(110), style: "italic")[Example] \
+      #local(number-format: none,
+        ```js
+        // fun sq(x) = x * x  (non-staged, pure)
+        NonStaged.sq(2)
+        ```
+      )
+      All args static; evaluate $"sq"(2) = 4$. \
+      $epsilon tack.r "sq"(2) ~> 4 => ⟦4⟧$
+    ],
+    block(
+      stroke: (top: 0.4pt + luma(180)),
+      inset: (top: 0.5em, x: 0.4em),
+      width: 100%,
+    )[
+      #set text(size: 0.78em)
+      #text(fill: luma(110), style: "italic")[Example] \
+      #local(number-format: none,
+        ```js
+        // pyth's body, x has dynamic shape
+        NonStaged.sq(x)
+        ```
+      )
+      $Gamma = x mapsto bold("dyn")$; cannot evaluate, emit code. \
+      $Gamma tack.r "sq"(x) ~> "sq"(x) => bold("dyn")$
+    ],
+  )
+]
+
+#slide[
+  === Static Shape
+
+  #v(1fr)
+  #align(center)[
+    #set text(size: 0.95em)
+    $
+      "static"(⟦iota⟧) &= bold("true") &quad
+      "static"(⟦[overline(s_i)^n]⟧) &= and.big_i "static"(s_i) \
+      "static"(⟦C(overline(n_i\:s_i))⟧) &= and.big_i "static"(s_i) &quad
+      "static"(s_1 union s_2) &= "static"(s_1) and "static"(s_2) \
+      "static"(bold("dyn")) &= bold("false") &quad
+      "static"(bot) &= bold("false")
+    $
+  ]
+
+  #block(
+    fill: luma(245), stroke: 0.5pt + luma(180),
+    inset: 0.7em, radius: 4pt, width: 100%,
+  )[
+    #text(weight: "bold")[Remark.] $"static"(s)$ returns true iff no subshape of $s$ contains $bold("dyn")$.
+  ]
+
+  #v(1fr)
+]
+
+== Shape Propagation (Pattern Matching)
+
+#slide[
+  Before giving the formal rules, let's give a simple trace of shape propagation for pattern matching.
 
   ```js
   class C(val n)
   staged module Simple with
     fun f(x) =
       let y
-      if x is C then  y = x.n
+      if x is C then y = x.n
       else y = 0
       y + 1
     fun test()     = f(C(2))
@@ -538,11 +1002,6 @@ staged module Math with
     fun test3()    = f(0)
   ```
 ]
-
-#let ctxbox(body) = block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.6em, radius: 4pt,
-  width: 100%, [#text(size: 0.8em, weight: "bold")[ctx] \ #body]
-)
 
 #slide[
   #columns(2)[
@@ -689,8 +1148,40 @@ staged module Math with
   ```
 ]
 
+== Pattern Matching (Formalization)
+
 #slide[
-  === Formalization of 
+  === Branch Filter (`filter`)
+
+  $"filter"$ removes impossible shapes from the branches of a pattern match.
+
+  #set text(size: 0.85em)
+  $
+    "filter"(s, \_) &= s
+      & quad "filter"(⟦iota_1⟧, iota_2) &= ⟦iota_1⟧ quad "if " iota_1 = iota_2 \
+    "filter"(⟦[overline(s_i)^n]⟧, \[\]^n) &= ⟦[overline(s_i)^n]⟧
+      & quad "filter"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= ⟦C(overline(n_i\:s_i)^m)⟧ \
+    "filter"(bold("dyn"), pi) &= "silh"(pi)
+      & quad "filter"(s_1 union s_2, pi) &= "filter"(s_1, pi) union "filter"(s_2, pi) \
+    "filter"(s, pi) &= bot quad "otherwise"
+  $
+]
+
+#slide[
+  === Branch Remainder (`rest`)
+
+  $"rest"$ removes shapes already covered by a match pattern.
+
+  #set text(size: 0.85em)
+  $
+    "rest"(s, \_) &= bot
+      & quad "rest"(⟦iota_1⟧, iota_2) &= bot quad "if " iota_1 = iota_2 \
+    "rest"(⟦[overline(s_i)^n]⟧, \[\]^n) &= bot
+      & quad "rest"(⟦C(overline(n_i\:s_i)^m)⟧, C) &= bot \
+    "rest"(bold("dyn"), pi) &= bold("dyn") quad "if " pi != \_
+      & quad "rest"(s_1 union s_2, pi) &= "rest"(s_1, pi) union "rest"(s_2, pi) \
+    "rest"(s, pi) &= s quad "otherwise"
+  $
 ]
 
 #slide[
@@ -1011,6 +1502,26 @@ how each individual function is called and specialized, combined with the cachin
 
 // What happens when other staged modules want to access these private functions?
 Those act as points that the user can call the staged module with. Other specialized functions are there too but they're mine. You can't touch them. I'm not even going to export them for you to access.
+
+#slide[
+  === Example 1
+
+  ```js
+  staged module Math with
+    fun pow(@dynamic x, n) = if n is
+      0 then 1
+      else x * pow(x, n-1)
+    fun sq(x) = pow(x, 2)
+  ```
+
+  #codly(skips:((1,4),))
+  ```js
+    fun sq(x) = x * x * 1
+  ```
+
+  This example touches on shape tracking, match arm removal, and nested specialization.
+]
+
 */
 
 // #magic.bibliography(title: none)

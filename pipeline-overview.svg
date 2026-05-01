@@ -1,46 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 80" font-family="sans-serif" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 70" font-family="sans-serif" xml:space="preserve">
   <defs>
-    <marker id="a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    <marker id="a" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L0,8 L10,4 z" fill="#555"/>
     </marker>
+    <style>
+      .lbl { font-size: 22px; font-style: italic; fill: #555; }
+      text { font-size: 26px; }
+    </style>
   </defs>
 
-  <!-- Parser -->
-  <rect x="10"  y="22" width="90" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
-  <text x="55"  y="45" text-anchor="middle">Parser</text>
+  <rect x="20"   y="4"  width="180" height="56" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
+  <text x="110"  y="40" text-anchor="middle">MLS Input</text>
+  <line x1="200" y1="32" x2="258" y2="32" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
 
-  <!-- arrow -->
-  <line x1="100" y1="40" x2="128" y2="40" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="260"  y="4"  width="160" height="56" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="340"  y="40" text-anchor="middle">Parser</text>
+  <line x1="420" y1="32" x2="478" y2="32" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
 
-  <!-- Lexer -->
-  <rect x="130" y="22" width="90" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
-  <text x="175" y="45" text-anchor="middle">Lexer</text>
+  <rect x="460"  y="4"  width="160" height="56" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="540"  y="40" text-anchor="middle">Elaborator</text>
+  <line x1="620" y1="32" x2="718" y2="32" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="669" y="22" text-anchor="middle" class="lbl">Term</text>
 
-  <!-- arrow -->
-  <line x1="220" y1="40" x2="248" y2="40" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="720"  y="0"  width="240" height="64" rx="6" fill="#fff3cd" stroke="#e6a800" stroke-width="1.6"/>
+  <text x="840"  y="40" text-anchor="middle" font-weight="bold">Lowering</text>
+  <line x1="960" y1="32" x2="1058" y2="32" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="1009" y="22" text-anchor="middle" class="lbl">Block</text>
 
-  <!-- ... -->
-  <text x="263" y="45" text-anchor="middle" fill="#888">…</text>
+  <rect x="1060" y="4"  width="140" height="56" rx="6" fill="#e0e8f8" stroke="#7090c0"/>
+  <text x="1130" y="40" text-anchor="middle">Codegen</text>
+  <line x1="1200" y1="32" x2="1238" y2="32" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
 
-  <!-- arrow -->
-  <line x1="278" y1="40" x2="306" y2="40" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
-
-  <!-- Lowering (highlighted) -->
-  <rect x="308" y="18" width="110" height="44" rx="5" fill="#fff3cd" stroke="#e6a800" stroke-width="1.5"/>
-  <text x="363" y="42" text-anchor="middle" font-weight="bold">Lowering</text>
-  <text x="363" y="56" text-anchor="middle" font-size="10" fill="#a07000">(Term → Block)</text>
-
-  <!-- arrow -->
-  <line x1="418" y1="40" x2="446" y2="40" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
-
-  <!-- Codegen -->
-  <rect x="448" y="22" width="90" height="36" rx="5" fill="#e0e8f8" stroke="#7090c0" stroke-width="1"/>
-  <text x="493" y="45" text-anchor="middle">Codegen</text>
-
-  <!-- arrow -->
-  <line x1="538" y1="40" x2="566" y2="40" stroke="#666" stroke-width="1.5" marker-end="url(#a)"/>
-
-  <!-- JS Output -->
-  <rect x="568" y="22" width="110" height="36" rx="5" fill="#d8f0d8" stroke="#4a9a4a" stroke-width="1"/>
-  <text x="623" y="45" text-anchor="middle">JS Output</text>
+  <rect x="1240" y="4"  width="180" height="56" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
+  <text x="1330" y="40" text-anchor="middle">JS Output</text>
 </svg>

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 300" font-family="sans-serif" xml:space="preserve">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 700" font-family="sans-serif" xml:space="preserve">
   <defs>
     <marker id="a" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
       <path d="M0,0 L0,8 L10,4 z" fill="#555"/>
@@ -75,4 +75,9 @@
 
   <rect x="1240" y="226" width="180" height="56" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
   <text x="1330" y="262" text-anchor="middle">JS Output</text>
+  <line x1="630" y1="76" x2="848" y2="76" class="hl" marker-end="url(#ah)"/>
+
+  <rect x="380" y="324" width="820" height="350" rx="10" fill="#eef4ff" stroke="#7090c0" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="398" y="362" class="ttl">Optimized Staged Block</text>
+  <text x="398" y="408" class="mono">Block.Ret("C(0)")</text>
 </svg>
