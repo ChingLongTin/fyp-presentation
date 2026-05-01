@@ -64,7 +64,7 @@
   <line x1="620" y1="254" x2="718" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
   <text x="669" y="244" text-anchor="middle" class="lbl">Term</text>
 
-  <rect x="720"  y="222" width="220" height="64" rx="6" fill="#fff3cd" stroke="#e6a800" stroke-width="1.6"/>
+  <rect x="720"  y="222" width="240" height="64" rx="6" fill="#fff3cd" stroke="#e6a800" stroke-width="1.6"/>
   <text x="840"  y="262" text-anchor="middle" font-weight="bold">Lowering</text>
   <line x1="960" y1="254" x2="1058" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
   <text x="1009" y="244" text-anchor="middle" class="lbl">Block</text>
@@ -75,6 +75,6 @@
 
   <rect x="1240" y="226" width="180" height="56" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
   <text x="1330" y="262" text-anchor="middle">JS Output</text>
-  <line x1="630" y1="76" x2="828" y2="76" class="hl" marker-end="url(#ah)"/>
+  <line x1="610" y1="76" x2="808" y2="76" class="hl" marker-end="url(#ah)"/>
 
 </svg>

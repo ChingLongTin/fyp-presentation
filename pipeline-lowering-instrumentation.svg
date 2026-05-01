@@ -64,7 +64,7 @@
   <line x1="620" y1="254" x2="718" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
   <text x="669" y="244" text-anchor="middle" class="lbl">Term</text>
 
-  <rect x="720"  y="222" width="220" height="64" rx="6" fill="#fff3cd" stroke="#e6a800" stroke-width="1.6"/>
+  <rect x="720"  y="222" width="240" height="64" rx="6" fill="#fff3cd" stroke="#e6a800" stroke-width="1.6"/>
   <text x="840"  y="262" text-anchor="middle" font-weight="bold">Lowering</text>
   <line x1="960" y1="254" x2="1058" y2="254" stroke="#666" stroke-width="1.6" marker-end="url(#a)"/>
   <text x="1009" y="244" text-anchor="middle" class="lbl">Block</text>

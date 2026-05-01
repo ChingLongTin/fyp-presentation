@@ -384,7 +384,7 @@ prop(
 
 #align(center)[#image("pipeline-lowering-printer.svg", width: 100%)]
 #align(center)[#block(width: 50%)[
-#text(size: 0.6em)[*Print(Opt(St. Blk))*]
+#text(size: 0.6em)[*Print(Opt(Staged Block))*]
 #set text(size: 0.5em)
 #local(number-format: none, highlights: ((line: 1, start: 1, end: 5, fill: yellow),),
 ```js
@@ -657,24 +657,7 @@ staged module Math with
 
 = Shape Propagation
 
-== Block and Shape
-
-// rhs are all Results, parameters are all Paths
-We focus on tracking the shape of the Paths and Results.
-
-$ s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot | s union s $
-
-```js
-fun f(p, cond) =
-  let a = 42
-  let b = new C(p, 2)
-  let c = if cond then [1, 2, 3] else C(1, 2)
-  let d = if b is C then 0 else 1
-```
-
-#pagebreak()
-
-=== Block in BNF 
+== Block in BNF 
 
 #let lbl(s) = text(style: "italic", fill: luma(110), size: 0.95em)[#s]
 
@@ -722,7 +705,7 @@ fun f(p, cond) =
   //   $::= epsilon | Gamma, p mapsto s quad (p eq.not x)$, [],
 )
 
-== A Tiny Example
+== Shape Definition
 
 #pagebreak()
 
@@ -733,7 +716,7 @@ $ #lbl[Shape] s ::= iota | bold("dyn") | [overline(s)] | C(overline(n\:s)) | bot
 We write #shape("s") to denote the shape of an expression, distinguishing it from actual values.
 
 #v(0.3em)
-#grid(columns: (27em, 1fr), column-gutter: 1em, align: (left, left + horizon),
+#grid(columns: (23em, 1fr), column-gutter: 1em, align: (left, left + horizon),
   [
     ```js
     fun f(p, cond) =
@@ -752,6 +735,8 @@ We write #shape("s") to denote the shape of an expression, distinguishing it fro
   ]
 )
 
+The mechanism to calculate the shapes are called *Shape Propagation*.
+
 
 #pagebreak()
 
@@ -765,7 +750,7 @@ staged module M with
 
 Walking through `test()`:
 
-+ Argument `2` has shape #shape("2") (a literal).
++ Argument `x` has shape #shape("2") (a literal).
 + Specialise `add1` with `x` ↦ #shape("2"); inside the body, `x` looks up #shape("2") in the context.
 + `x + 1` folds: #shape("2") `+` #shape("1") $arrow$ #shape("3").
 + Cache the result as `add1_Lit2() = 3`; rewrite the call site `add1(2)` to `add1_Lit2()`.
