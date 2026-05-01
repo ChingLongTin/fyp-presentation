@@ -39,6 +39,12 @@
 9. Explain the motivation why we recreate the Block data structure within MLScript instead of directly manipulating the Scala Block (Maintainability?)
 */
 
+#let callout(name, text) = block(
+    fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+    width: 100%,
+    [*$name$:* #text]
+  )
+
 = Motivation
 
 == Compile-Time vs. Run-Time Work
@@ -69,11 +75,9 @@ Programmers often write code in a clear, general style, even when parts of it co
 The recursion, the pattern matching, the multiplication are all known at compile time. The residual program contains only the work that genuinely depends on the runtime input `v`.
 
 #v(0.5em)
-#block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
-  width: 100%,
-  [*Goal:* let the programmer keep the abstract version, and have the compiler peel away the static layer automatically.]
-)
+#callout([Goal], [
+  let the programmer maintain the abstract version, and have the compiler automatically create a efficient implementation.
+])
 
 = Literature Survey
 
@@ -176,18 +180,22 @@ Improve the compilation of functions with domain-specific modules. @parreaux2017
 
 
 #v(0.5em)
-#block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
-  width: 100%,
-  [*Drawback:* The annotations need to be manually added, and so the library designer needs to anticipate uses of the library.]
-)
-
+#callout([Drawback],[
+  The annotations need to be manually added, and so the library designer needs to anticipate uses of the library.
+])
 #v(0.5em)
-#block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
-  width: 100%,
-  [*Improvement:* Code fragments are evaluated separately, when the result of a code fragment may be reused.]
-)
+#callout([Drawback],[
+  Code fragments are evaluated separately, when the result of a code fragment may be reused.
+])
+
+#codly(highlights: (
+  (line: 1, start: 23, end: 47, fill: green),
+  (line: 1, start: 31, end: 46, fill: gray),
+  (line: 1, start: 43, end: 43, fill: green),
+))
+```js
+fun power10() = .! .<(x => .~(power(10, .<x>.)))>.
+```
 
 == Class specialization
 
@@ -209,23 +217,28 @@ Improve the compilation of functions with domain-specific modules. @parreaux2017
 
   #colbreak()
 
-  #codly(skips: ((1, 7), ))
-  ```js
-  if x is
-    D1 then x.D1_f1()
-    D2 then x.D2_f1()
-    D3 then x.D3_f1()
-  ```
+  Traditional MSP tracks types.
+  
+  Even if `x` has a known class shape, we cannot remove matching arms.
+  
+  We know that `x : B`, but we do not know which specific derived class of `B` are used.
 ]
 
 #pagebreak()
 
-Traditional Multi-Stage Programming tracks types.
+#codly(skips: ((1, 7), ))
+```js
+if x is
+  D1 then x.D1_f1()
+  D2 then x.D2_f1()
+  D3 then x.D3_f1()
+```
 
-Even if `x` has a known class shape, we cannot remove matching arms.
+#callout([Drawback],[
+  We are unable to eliminate the specialization of `D3`, even though it is unneeded.
+])
 
-Specialization is done through typing, so we know that
-`x : B`, but we do not know which specific derived class of `B` is used.
+#pagebreak()
 
 ```js
 data class Foo(x, y) extends Bar(x+1, y+1)
@@ -250,11 +263,9 @@ class Bar$2$3
 ```
 
 #v(0.5em)
-#block(
-  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
-  width: 100%,
-  [*Drawback:* Either we perform class splitting, or we do not specialize inherited classes.]
-)
+#callout([Drawback],[
+  Either we perform class splitting, or we do not specialize inherited classes.
+])
 
 
 = Overview
