@@ -75,4 +75,6 @@
 
   <rect x="1240" y="226" width="180" height="56" rx="6" fill="#eaf6ea" stroke="#4a9a4a"/>
   <text x="1330" y="262" text-anchor="middle">JS Output</text>
+  <line x1="990" y1="76" x2="1178" y2="76" class="hl" marker-end="url(#ah)"/>
+
 </svg>
