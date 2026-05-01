@@ -168,12 +168,32 @@ x => x * x * 1
 fun power2 = x => x * x * 1
 ```
 
+#pagebreak()
 
+== Linking Rewriting DSLs
+
+Improve the compilation of functions with domain-specific modules. @parreaux2017quoted
+
+
+#v(0.5em)
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+  width: 100%,
+  [*Drawback:* The annotations need to be manually added, and so the library designer needs to anticipate uses of the library.]
+)
+
+#v(0.5em)
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+  width: 100%,
+  [*Improvement:* Code fragments are evaluated separately, when the result of a code fragment may be reused.]
+)
 
 == Class specialization
 
 #columns(2)[
   #local(lang-format: (_, _, _) => [],
+  highlights: ((line: 9, start: 0, fill: yellow),),
   ```js
   class B(val x) with
     fun f() = ...
@@ -214,20 +234,27 @@ if new Foo(1, 2) is
   Bar(x, y) then ...
 ```
 
+== First Class Functions
+
+```js
+
+```
+
+#pagebreak()
+
 Under single inheritance, matching arms runs into problems. @shali2011hybrid
-
-(Class splitting)
-// https://www.cs.tufts.edu/comp/150FP/archive/william-cook/hybrid-partial-eval.pdf for second approach
-
 
 ```js
 class Foo$1$2 extends Bar
 class Bar$2$3
 ```
 
-
-
-
+#v(0.5em)
+#block(
+  fill: luma(245), stroke: 0.5pt + luma(180), inset: 0.7em, radius: 4pt,
+  width: 100%,
+  [*Drawback:* Either we perform class splitting, or we do not specialize inherited classes.]
+)
 
 
 = Overview
@@ -421,11 +448,11 @@ print(
 ])
 ]]
 
-
-
-
-
 = Staging
+
+== Function-to-Class Transformation
+
+Simplify lambda functions by turning them into classes
 
 == Staging Block
 
@@ -1820,19 +1847,26 @@ This is a similar process to staging, but done in reverse.
 
 As before, we need extra care when handling symbols.
 
+```js
+import "../M.mls"
 
-// = Testing
-
-// relevant? there's nothing really notable compared to ordinary MLscript development (diff/compile tests are already features within it)
-
+```
 
 = Benchmarking
 
 == Model-View-Projection transformation
 
-Matrix multiplication, where certain values within the matrix may be known
+Used in 3D rendering
 
-basically we're pretty good at partially evaluating matrices ^w^.
+$ arrow(v) = M V P dot arrow(u) $
+
+Evaluate matrix multiplications when the matrices are known values.
+
+Benchmark: Transform 16k random coordinates using a known transformation matrices
+
+=== Time
+
+Unstaged: ~2s
 
 Time: about 2x (from 2s to 1s, eh...)
 
