@@ -2047,19 +2047,21 @@ A typical module after Dynamic Staging would look like the following:
     tmp = 1
     tmp1 = pow_Dyn_Lit1(x)
     x * tmp1
+  ```
+  #colbreak()
   
-
-  #[
-    #codly(offset: 9)
-      fun pow_Dyn_Lit3(x) =
-      let {tmp, tmp1}
-      tmp = 2
-      tmp1 = pow_Dyn_Lit2(x)
-      x * tmp1
+  #codly(offset: 9)
+  ```js
+  fun pow_Dyn_Lit3(x) =
+  let {tmp, tmp1}
+  tmp = 2
+  tmp1 = pow_Dyn_Lit2(x)
+  x * tmp1
   module M with
     fun pow(n, x) = ...
     fun cube(x) = ...
-    ```
+  ```
+
   ]
 
 
