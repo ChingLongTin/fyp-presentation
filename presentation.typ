@@ -1295,7 +1295,7 @@ Recall that during execution of the optimizer, we already compile the function `
   fill: luma(245), stroke: 0.5pt + luma(180),
   inset: 0.7em, radius: 4pt, width: 100%,
 )[
-  #text(weight: "bold")[Remark.] $"static"(s)$ returns true iff s is non-empty and no subshape of $s$ contains $bold("dyn")$.
+  #text(weight: "bold")[Remark.] $"static"(s)$ returns true iff s only contains one shape (no union) and no subshape of $s$ contains $bold("dyn")$.
 ]
 
 #v(1fr)
