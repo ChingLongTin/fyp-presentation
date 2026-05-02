@@ -271,11 +271,11 @@ See memoization of code fragments in @swadi2006monadic.
   ]
 ]
 
-== First Class Functions
+// == First Class Functions
 
-```js
+// ```js
 
-```
+// ```
 
 = Overview
 
