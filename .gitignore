@@ -1,1 +1,3 @@
 .vscode/*
+video/media/*
+video/__pycache__/*
