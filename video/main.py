@@ -1,16 +1,5 @@
 from manim import *
-
-
-def mls(code):
-    return Code(
-        code_string=code,
-        add_line_numbers=False,
-        language="javascript",
-        tab_width=2,
-        formatter_style="emacs",
-        paragraph_config={"line_spacing": 1},
-    )
-
+from helpers import *
 
 power_base = """
 module M with
