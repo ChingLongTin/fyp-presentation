@@ -1,3 +1,5 @@
-.vscode/*
-video/media/*
-video/__pycache__/*
+.vscode
+video/media
+video/__pycache__
+.venv/
+.DS_Store
