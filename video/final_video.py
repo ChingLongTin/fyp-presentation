@@ -33,7 +33,7 @@ from manim import Text as _BaseText
 # so at small font_size values (≲ 30) characters appear weirdly kerned
 # ("ex" sticking together, etc.). Workaround: always render at a large base
 # size where Pango has enough sub-pixel precision, then scale down to the
-# requested visual size. This keeps the public API unchanged.
+# requested visual size.
 _TEXT_BASE_FONT_SIZE = 96
 
 
@@ -122,8 +122,7 @@ fun rotate45(m) =
   let s45 = 0.7071
   Matrix.matmul([c45, -s45, s45, c45], m)"""
 
-        # cos(45°) = sin(45°) = 0.7071, so the four rows collapse to plain
-        # additions / subtractions over m.(0..3).
+        # cos(45) = sin(45) = 0.7071
         residual = """fun rotate45(m) =
   [
     (0.7071 * m.(0)) - (0.7071 * m.(2)),
@@ -261,48 +260,52 @@ class MSPApproach(Scene):
             head, DOWN, buff=0.1
         )
 
-        plain_src = """
-module M with
-  fun pow(n, x) = if n is
-    0 then 1
-    else x * pow(n - 1, x)"""
-
         annotated_src = """
-module M with
-  fun pow(n, x) = if n is
-    0 then .<1>.
-    else .<.~x * .~(pow(n-1, x))>."""
+fun power(n, x) = if n is
+  0 then .<1>.
+  else .<.~x * .~(power(n-1, x))>.
+fun power2 = .!.<(x => .~(power(2, .<x>.)))>."""
 
-        before = mls(plain_src).scale(0.85).move_to(ORIGIN).shift(DOWN * 0.2)
-        after = mls(annotated_src).scale(0.85).move_to(before, aligned_edge=ORIGIN)
+        residual_src = """
+fun power2 = x => x * x * 1"""
+
+        before_label = Text("MSP-annotated source", font_size=22,
+                            color=GREY_A)
+        after_label = Text("Residual program after stage 1", font_size=22,
+                           color=GREY_A)
+
+        before = mls(annotated_src).scale(0.8)
+        after = mls(residual_src).scale(0.8)
+
+        before_grp = VGroup(before_label, before).arrange(DOWN, buff=0.25)
+        after_grp = VGroup(after_label, after).arrange(DOWN, buff=0.25)
+
+        before_grp.move_to(ORIGIN).shift(DOWN * 0.2)
 
         self.play(FadeIn(head), FadeIn(cite))
         self.play(Write(before))
-        self.wait(0.8)
-        self.play(FadeTransform(before, after))
+        self.play(FadeIn(before_label))
+        self.wait(2.0)
 
-        # Highlight the MSP annotations (same regions as in main.MSPAnnotation).
-        lines = after.code_lines
-        relevant = [
-            lines[2][5:7],          # .<
-            lines[2][-2:],          # >.
-            lines[3][4:4 + 4],      # .<.~
-            lines[3][10:12],        # .~  (only the splice, not the `(`)
-            lines[3][-2:],          # >.  (drop the trailing `)`)
-        ]
-        annot_highlights = VGroup(
-            *[
-                SurroundingRectangle(x, buff=0)
-                .set_fill(YELLOW)
-                .set_opacity(0)
-                for x in relevant
-            ]
+        arrow = Arrow(
+            start=ORIGIN, end=DOWN * 0.55, buff=0.05,
+            color=YELLOW_E, stroke_width=5,
         )
-        self.add(annot_highlights)
-        self.play(annot_highlights.animate.set_opacity(0.3))
-        self.wait(3.5)
+        arrow_lbl = Text("executing stage 1 generates", font_size=22,
+                         color=YELLOW_E).next_to(arrow, RIGHT, buff=0.2)
 
-        self.play(FadeOut(VGroup(head, cite, after, annot_highlights)))
+        # Move before_grp up to make room for arrow + after.
+        self.play(before_grp.animate.shift(UP * 1.0))
+        arrow.next_to(before_grp, DOWN, buff=0.15)
+        arrow_lbl.next_to(arrow, RIGHT, buff=0.2)
+        after_grp.next_to(arrow, DOWN, buff=0.15)
+
+        self.play(GrowArrow(arrow), FadeIn(arrow_lbl))
+        self.play(Write(after), FadeIn(after_label))
+        self.wait(3.0)
+
+        self.play(FadeOut(VGroup(
+            head, cite, before_grp, arrow, arrow_lbl, after_grp)))
 
 
 # -----------------------------------------------------------------------------
@@ -313,16 +316,13 @@ module M with
 class OurApproach(Scene):
     def construct(self):
         head = Text(
-            "Similar to MSP pipeline, but far less annotations",
+            "MSP vs Dynamic Staging overview",
             weight=BOLD,
             font_size=42,
         ).to_edge(UP)
         self.play(FadeIn(head))
 
-        # =====================================================================
         # Helper: build a pipeline row for one approach.
-        #   [label]  source  ── stage 1 ──▶  residual  ── stage 2 ──▶  Result: 125
-        # =====================================================================
         def build_row(label_str, label_color, src_code, residual_code,
                        res_lbl_text):
             row_label = Text(label_str, weight=BOLD, font_size=22,
@@ -338,12 +338,15 @@ class OurApproach(Scene):
             value_lbl = Text("Result", font_size=14, color=GREY_B)
             value_grp = VGroup(value_lbl, value_text).arrange(DOWN, buff=0.1)
 
-            arr1_zone = Rectangle(width=1.4, height=0.01).set_opacity(0)
-            arr2_zone = Rectangle(width=1.4, height=0.01).set_opacity(0)
+            arr1_zone = Rectangle(width=0.9, height=0.01).set_opacity(0)
+            arr2_zone = Rectangle(width=0.9, height=0.01).set_opacity(0)
 
-            row = VGroup(
-                row_label, src_grp, arr1_zone, res_grp, arr2_zone, value_grp,
+            # The pipeline (without the row label) is what we'll align
+            # column-by-column across both rows.
+            pipe = VGroup(
+                src_grp, arr1_zone, res_grp, arr2_zone, value_grp,
             ).arrange(RIGHT, buff=0.35, aligned_edge=ORIGIN)
+            row = VGroup(row_label, pipe)
 
             arr1 = Arrow(
                 arr1_zone.get_left(), arr1_zone.get_right(),
@@ -368,14 +371,13 @@ class OurApproach(Scene):
                 "value_grp": value_grp,
                 "arr1": arr1, "arr1_lbl": arr1_lbl,
                 "arr2": arr2, "arr2_lbl": arr2_lbl,
+                "pipe": pipe,
                 "row": row,
             }
 
-        # =====================================================================
-        # MSP row (top): function-level, heavily annotated source.
-        # =====================================================================
-        msp_src_text = """fun pow(n, x) = if n is
-  0 then .<1>.
+        # MSP row (top)
+        msp_src_text = """fun pow(n, x) = if n is 0 
+  then .<1>.
   else .<.~x * .~(pow(n-1, x))>."""
         msp_src = mls(msp_src_text).scale(0.45)
 
@@ -387,21 +389,19 @@ class OurApproach(Scene):
             "MSP", ORANGE, msp_src, msp_residual, "residual function",
         )
 
-        # =====================================================================
         # Dynamic Staging row (bottom): just the `staged` keyword.
-        # =====================================================================
         ds_src_text = """staged module M with
   fun pow(n, x) = if n is
     0 then 1
-    else x * pow(n-1, x)
+    else x * pow(n - 1, x)
   fun cube(x) = pow(x, 3)"""
         ds_src = mls(ds_src_text).scale(0.42)
 
         ds_residual_text = """module M with
   fun pow0(x) = 1
-  fun pow1(x) = x*pow0(x)
-  fun pow2(x) = x*pow1(x)
-  fun pow3(x) = x*pow2(x)
+  fun pow1(x) = x * pow0(x)
+  fun pow2(x) = x * pow1(x)
+  fun pow3(x) = x * pow2(x)
   fun cube(x) = pow3(x)"""
         ds_residual = mls(ds_residual_text).scale(0.4)
 
@@ -409,22 +409,35 @@ class OurApproach(Scene):
             "Dynamic Staging", GREEN_D, ds_src, ds_residual, "residual module",
         )
 
-        # =====================================================================
-        # Stack the two rows vertically and align them column-by-column.
-        # =====================================================================
-        stack = VGroup(msp["row"], ds["row"]).arrange(DOWN, buff=1.0)
-        stack.move_to(ORIGIN).shift(DOWN * 0.2)
+        def _bg(code_mob):
+            # In Manim CE Code, the first submobject is the background rect.
+            return code_mob.submobjects[0]
 
-        # Column-align src_grp / res_grp / value_grp between the two rows,
-        # anchored on whichever row has the wider element.
-        for key in ("src_grp", "res_grp", "value_grp"):
-            tgt_x = max(msp[key].get_center()[0], ds[key].get_center()[0])
-            for row in (msp, ds):
-                row[key].move_to(np.array(
-                    [tgt_x, row[key].get_center()[1], 0]))
+        src_w = max(_bg(msp_src).width, _bg(ds_src).width) + 0.25
+        res_w = max(_bg(msp_residual).width, _bg(ds_residual).width) + 0.25
+        for code, w in [
+            (msp_src, src_w), (ds_src, src_w),
+            (msp_residual, res_w), (ds_residual, res_w),
+        ]:
+            bg = _bg(code)
+            bg.stretch_to_fit_width(w)
+            # Left-align the code text inside the (now wider) background.
+            text = code.submobjects[1]
+            text.align_to(bg, LEFT).shift(RIGHT * 0.12)
+        # Re-arrange src/res groups and the pipeline now that widths changed.
+        for row in (msp, ds):
+            row["src_grp"].arrange(DOWN, buff=0.1)
+            row["res_grp"].arrange(DOWN, buff=0.1)
+            row["pipe"].arrange(RIGHT, buff=0.35, aligned_edge=ORIGIN)
 
-        # Re-derive arrow positions for both rows so they sit between the
-        # newly-aligned columns.
+        # Stack only the pipelines vertically and centre them. The row
+        # labels are placed afterwards as overlays so they don't pull the
+        # pipelines off-centre.
+        stack = VGroup(msp["pipe"], ds["pipe"]).arrange(DOWN, buff=1.0)
+        stack.move_to(ORIGIN).shift(DOWN * 0.2 + RIGHT * 0.85)
+
+        # Re-derive arrow positions for both rows
+        # so the corresponding columns are aligned across rows automatically.
         for row in (msp, ds):
             y = row["src_grp"].get_center()[1]
             x1_l = row["src_grp"].get_right()[0] + 0.1
@@ -438,14 +451,12 @@ class OurApproach(Scene):
             row["arr1_lbl"].next_to(row["arr1"], UP, buff=0.06)
             row["arr2_lbl"].next_to(row["arr2"], UP, buff=0.06)
 
-        # Place row labels just left of each row.
+        # Place row labels just left of each row's source.
         for row in (msp, ds):
             row["label"].next_to(row["src_grp"], LEFT, buff=0.4)
             row["label"].set_y(row["src_grp"].get_center()[1])
 
-        # =====================================================================
         # Animate MSP row.
-        # =====================================================================
         self.play(
             FadeIn(msp["label"]),
             FadeIn(msp["src_grp"]),
@@ -454,11 +465,9 @@ class OurApproach(Scene):
         # Highlight the heavy MSP annotation regions.
         msp_lines = msp_src.code_lines
         # code_lines strips whitespace, so indices are over visible glyphs only.
-        # Line 1 glyphs: "0then.<1>."                       → ".<1>." starts at 5
-        # Line 2 glyphs: "else.<.~x*.~(pow(n-1,x))>."       → annotation starts at 4
         annot_box = VGroup(
             SurroundingRectangle(
-                msp_lines[1][5:], color=YELLOW, buff=0.03, stroke_width=2,
+                msp_lines[1][4:], color=YELLOW, buff=0.03, stroke_width=2,
             ).set_fill(YELLOW).set_opacity(0),
             SurroundingRectangle(
                 msp_lines[2][4:], color=YELLOW, buff=0.03, stroke_width=2,
@@ -483,9 +492,7 @@ class OurApproach(Scene):
         self.wait(0.4)
         self.play(FadeOut(msp_caption))
 
-        # =====================================================================
         # Animate Dynamic Staging row.
-        # =====================================================================
         self.play(
             FadeIn(ds["label"]),
             FadeIn(ds["src_grp"]),
@@ -530,9 +537,7 @@ class OurApproach(Scene):
         self.play(FadeIn(punchline))
         self.wait(3.0)
 
-        # =====================================================================
-        # Transition to the next scene: zoom the dynamic-staging *stage 1*
-        # =====================================================================
+        # Transition to the next scene: zoom the dynamic-staging stage 1
         # First, fade everything except the DS stage-1 arrow and its label.
         self.play(FadeOut(VGroup(
             head,
@@ -569,13 +574,7 @@ class PowExample(Scene):
         head = section_title("Stage 1: symbolic execution")
         self.add(head)
 
-        # =================================================================
         # Lay out CODE  +  SPECIALIZED FUNCTIONS  +  SHAPE CONTEXT
-        # so the three blocks align at the top.  We keep the *whole* module
-        # in the code block — including the parts we are not specialising —
-        # so the code block stays tall enough to line up with the right-
-        # hand stack of two tables.
-        # =================================================================
         body_src = """staged module M with
   fun pow(n, x) = if n is
     0 then 1
@@ -595,7 +594,7 @@ M.cube(5)"""
             ("pow2(x)", "x * pow1(x)"),
             ("pow1(x)", "x * pow0(x)"),
             ("pow0(x)", "1"),
-            # 5th row reserved for `cube(x)` — added to the cache after the
+            # 5th row reserved for `cube(x)`, added to the cache after the
             # symbolic-execution loop completes.
             ("cube(x)", "pow3(x)"),
         ]
@@ -659,7 +658,7 @@ M.cube(5)"""
         ).next_to(sc_frame, UP, buff=0.12).align_to(sc_frame, LEFT).shift(RIGHT * 0.1)
         sc_grp = VGroup(sc_title, sc_frame, sc_div, *sc_hdr)
 
-        # --- Status label that lives directly above the code block. ----------
+        # Status label that lives directly above the code block.
         status_label = Text("Now specializing:", font_size=18, color=GREY_B)
         status_call = Text("(idle)", font="Menlo", font_size=20, color=YELLOW_E)
         status = VGroup(status_label, status_call).arrange(RIGHT, buff=0.2,
@@ -667,8 +666,8 @@ M.cube(5)"""
         code_with_status = VGroup(status, code).arrange(DOWN, buff=0.2,
                                                        aligned_edge=LEFT)
 
-        # --- Stack the two tables, then place the (status+code) column to
-        # their left so the *top borders* of all three blocks align. ----------
+        # Stack the two tables, then place the (status+code) column to
+        # their left so the *top borders* of all three blocks align.
         tables = VGroup(sf_grp, sc_grp).arrange(
             DOWN, aligned_edge=LEFT, buff=0.45,
         )
@@ -703,12 +702,11 @@ M.cube(5)"""
         )
         self.wait(0.6)
 
-        # =================================================================
         # Helper utilities for the animation-driven walk-through.
-        # All run-times are scaled 1.5× compared with the previous version.
-        # =================================================================
+
         sc_rows_visible = []  # list of VGroup(var_text, shape_text)
-        # Track the *current* status_call mobject so we can fade it out at
+
+        # Track the current status_call mobject so we can fade it out at
         # scene end (each set_status() returns a brand-new Text object).
         status_ref = {"call": status_call}
 
@@ -763,19 +761,13 @@ M.cube(5)"""
             self.play(Indicate(row, color=YELLOW, scale_factor=1.15), run_time=0.75)
             self.play(FadeOut(box), run_time=0.3)
 
-        # =================================================================
         # Step 0: cube initiates the call pow(x, 3).
-        # =================================================================
         cube_box = SurroundingRectangle(code.code_lines[4], color=YELLOW, buff=0.04)
         self.play(Create(cube_box), run_time=0.6)
         self.wait(1.0)
         self.play(FadeOut(cube_box), run_time=0.4)
 
-        # =================================================================
-        # Walk through the four symbolic-execution iterations.  We highlight
-        # the code lines of pow's body; the full module stays on screen so
-        # the three blocks remain top-aligned for the whole scene.
-        # =================================================================
+        # Walk through the four symbolic-execution iterations.
         if_line = code.code_lines[1]   # "  fun pow(n, x) = if n is"
         then_line = code.code_lines[2] # "    0 then 1"
         else_line = code.code_lines[3] # "    else x * pow(n - 1, x)"
@@ -789,10 +781,7 @@ M.cube(5)"""
                 status_call = set_status(f"pow(x, {k})")
                 set_shape_ctx([("n", f"Lit {k}"), ("x", "Dyn")])
 
-            # (b) Flash the if-line with a clean surrounding box (no
-            # Indicate / no inner slice — both produced a stray yellow
-            # square at certain font sizes).  Then flash the n row in
-            # the shape context to show that n's shape is being read.
+            # (b) Flash the if-line with a clean surrounding box
             if_box = SurroundingRectangle(
                 if_line, color=YELLOW, buff=0.04, stroke_width=2,
             )
@@ -844,28 +833,26 @@ M.cube(5)"""
                 run_time=0.55,
             )
 
-        # =================================================================
         # Final step.  Now that all four pow-specialisations are in the
         # cache, we:
         #   (1) rewrite  pow(x, 3)  inside cube's body to a direct call to
         #       the cached pow3(x);
-        #   (2) record cube itself as a NEW (5th) cache entry whose body is
-        #       just  pow3(x)  \u2014 we do NOT overwrite pow3 at this stage;
-        #   (3) reveal  M.cube(5)  in the source.  Because that's the only
+        #   (2) record cube itself as a 5th cache entry whose body is
+        #       just pow3(x)  we do NOT overwrite pow3 at this stage;
+        #   (3) reveal  M.cube(5) in the source. Because that's the only
         #       site using module M, the dead pow_i specialisations can be
-        #       eliminated, and inlining gives  cube(x) = x * x * x.
-        # =================================================================
+        #       eliminated, and inlining gives cube(x) = x * x * x.
+
         cube_line = code.code_lines[4]
         cube_focus_box = SurroundingRectangle(
             cube_line, color=BLUE_C, buff=0.04, stroke_width=2,
         )
-        # The status banner should follow the focus: we are no longer
-        # specialising pow(…), we are now working on cube.
+
         set_status("cube(x)")
         self.play(Create(cube_focus_box), run_time=0.6)
         self.wait(0.4)
 
-        # ---- Step (1): rewrite pow(x, 3) \u2192 pow3(x) inside cube. ---------
+        # (1): rewrite pow(x, 3) to pow3(x) inside cube.
         cube_after_full = mls("  fun cube(x) = pow3(x)").scale(0.55)
         cube_after = cube_after_full.code_lines[0]
         cube_after.move_to(cube_line, aligned_edge=LEFT)
@@ -884,7 +871,7 @@ M.cube(5)"""
         self.remove(cube_line)
         self.wait(1.4)
 
-        # ---- Step (2): add cube as a NEW cache row (does not replace pow3).
+        # (2): add cube as a new cache row
         add_msg = Text(
             "Cache cube(x) too. Its body is just pow3(x).",
             font_size=20, color=YELLOW_E, weight=BOLD,
@@ -897,7 +884,7 @@ M.cube(5)"""
         )
         self.wait(1.2)
 
-        # ---- Step (3): highlight  M.cube(5)  — already visible in source.
+        # (3): highlight  M.cube(5)
         entry_line = code.code_lines[5]
         entry_box = SurroundingRectangle(
             entry_line, color=GREEN_D, buff=0.04, stroke_width=2,
@@ -914,7 +901,7 @@ M.cube(5)"""
         self.play(Create(entry_box), run_time=0.6)
         self.wait(1.6)
 
-        # ---- Step (4): inline pow3(x) body into cube — fold the chain
+        # (4): inline pow3(x) body into cube
         inline_msg = Text(
             "Inline pow3's body into cube  \u2192  cube(x) = x * x * x.",
             font_size=22, color=GREEN_D, weight=BOLD,
@@ -941,7 +928,7 @@ M.cube(5)"""
         self.remove(cube_after, sf_rows[4][1])
         self.wait(1.2)
 
-        # ---- Step (5): now that nothing references pow0-pow3, drop them.
+        # (5): now that nothing references pow0-pow3, drop them.
         elim_msg = Text(
             "pow0 to pow3 are unreachable  \u21d2  drop them.",
             font_size=22, color=RED_C, weight=BOLD,
@@ -980,20 +967,15 @@ M.cube(5)"""
             run_time=0.9,
         )
 
-        # Pause so the viewer can fully read   cube(x) = x * x * x.
         self.wait(2.0)
 
-        # ---- Step (6): with the recursion fully unrolled
+        # (6)
         call_msg = Text(
             "Now we obtain the final residual module M",
             font_size=22, color=GREEN_D, weight=BOLD,
         ).to_edge(DOWN, buff=0.4)
 
-        # Morph  `staged module M with`  →  `module M with`  in place,
-        # simultaneously with the call_msg appearing.  We don't morph the
-        # `M.cube(5)` line — cube has already been inlined to x*x*x in the
-        # cache, so leaving the source call site as-is keeps the slide
-        # uncluttered.
+        # Morph  `staged module M with`  to  `module M with`  in place,
         plain_module_src = mls("module M with").scale(0.55)
         plain_module_line = plain_module_src.code_lines[0]
         plain_module_line.move_to(
@@ -1020,10 +1002,7 @@ M.cube(5)"""
                 plain_module_line,
             )),
         )
-        # Belt-and-braces: when this scene runs as part of FinalVideo, the
-        # Scene instance is shared across sub-scenes — ensure no leftover
-        # mobjects (e.g. opacity-0 children whose alpha gets restored by
-        # FadeOut.clean_up_from_scene) survive into the next scene.
+
         self.clear()
 
 
@@ -1048,11 +1027,9 @@ class ShapeProp(Scene):
         head = section_title("How does the compiler know what to peel?")
         self.play(FadeIn(head))
 
-        # =====================================================================
         # Part 1 — what is a "shape"? A tiny static fact about a value.
-        # =====================================================================
         sub1 = Text(
-            "Idea: tag every value with a  shape  — a tiny static fact.",
+            "Idea: tag every value with a shape",
             font_size=24,
             color=GREY_B,
         ).next_to(head, DOWN, buff=0.2)
@@ -1097,9 +1074,7 @@ class ShapeProp(Scene):
         self.wait(2.5)
         self.play(FadeOut(VGroup(examples, legend, sub1)))
 
-        # =====================================================================
         # Part 2 — shapes propagate. Walk through cube(x) = pow(x, 3).
-        # =====================================================================
         sub2 = Text(
             "Shapes propagate through calls — and prune dead branches.",
             font_size=24,
@@ -1151,8 +1126,7 @@ fun pow(n, x) = if n is
             self.play(FadeIn(line, shift=RIGHT * 0.1), run_time=0.4)
             return line
 
-        # ----- Step 1: caller is M.cube(5). x : Lit 5? No, x is the param of cube;
-        # here we focus on stage 1 where the *call site* M.cube(5) drives shapes. -----
+        # Step 1: caller is M.cube(5). 
         narr1 = Text(
             "Step 1: the call M.cube(5) tells stage 1 that x is Lit 5.",
             font_size=20, color=GREY_B,
@@ -1164,7 +1138,7 @@ fun pow(n, x) = if n is
         add_ctx("cube:  x = Lit 5", GREEN_D)
         self.wait(1.0)
 
-        # ----- Step 2: enter pow with n = Lit 3, x = Lit 5 -----
+        # Step 2: enter pow with n = Lit 3, x = Lit 5
         narr2 = Text(
             "Step 2: cube(x) calls pow(x, 3), so in pow we know n : Lit 3, x : Lit 5.",
             font_size=20, color=GREY_B,
@@ -1175,7 +1149,7 @@ fun pow(n, x) = if n is
         add_ctx("pow:   n = Lit 3,  x = Lit 5", GREEN_D)
         self.wait(1.0)
 
-        # ----- Step 3: dead-branch elimination on `n is 0`. -----
+        # Step 3: dead-branch elimination on `n is 0`.
         narr3 = Text(
             "Step 3: n is statically Lit 3, not 0.  The 'then 1' branch is dead.",
             font_size=20, color=GREY_B,
@@ -1187,7 +1161,7 @@ fun pow(n, x) = if n is
         self.play(Create(cross))
         self.wait(1.5)
 
-        # ----- Step 4: take the live branch, decrement n. -----
+        # tep 4: take the live branch, decrement n.
         narr4 = Text(
             "Step 4: take the live branch.  n shrinks: Lit 3 → Lit 2 → Lit 1 → Lit 0.",
             font_size=20, color=GREY_B,
@@ -1199,7 +1173,7 @@ fun pow(n, x) = if n is
         add_ctx("recurse: n = Lit 0", BLUE_C)
         self.wait(0.6)
 
-        # ----- Step 5: base case fires, recursion terminates. -----
+        # Step 5: base case fires, recursion terminates.
         narr5 = Text(
             "Step 5: when n : Lit 0, the base case fires — the 'else' branch is now dead.",
             font_size=20, color=GREY_B,
@@ -1216,7 +1190,7 @@ fun pow(n, x) = if n is
         add_ctx("base:    return Lit 1", GREEN_D)
         self.wait(1.5)
 
-        # ----- Step 6: residual code is x*x*x*1, with no recursion left. -----
+        # Step 6: residual code is x*x*x*1, with no recursion left.
         narr6 = Text(
             "Step 6: every recursive call was peeled away — the residual is straight-line code.",
             font_size=20, color=YELLOW_E,
@@ -1242,9 +1216,7 @@ fun pow(n, x) = if n is
             )
         )
 
-        # =====================================================================
         # Part 3 — try it yourself.  Mention the web demo.
-        # =====================================================================
         demo_head = Text(
             "Try it yourself — live in your browser.",
             font_size=30, weight=BOLD, color=YELLOW_E,
@@ -1269,9 +1241,7 @@ fun pow(n, x) = if n is
         self.play(FadeOut(VGroup(head, demo_head, bullets, url)))
 
 
-# -----------------------------------------------------------------------------
-# 6. Novelty — other features of dynamic staging
-# -----------------------------------------------------------------------------
+# 6. Novelty, other features of dynamic staging
 
 
 class Novelty(Scene):
@@ -1296,9 +1266,6 @@ fun pick(b) =
   if b then new B1(2) else new B2(3)
 fun use(b) = pick(b).call(5)"""
         ).scale(0.7)
-        # Pull the code block toward the centre instead of slamming it to
-        # the left edge so the viewer doesn't have to look as far across
-        # the slide.
         code.next_to(part1, DOWN, buff=0.45).shift(LEFT * 2.4)
 
         shape_lbl = Text("inferred shape of pick(b):",
@@ -1308,9 +1275,6 @@ fun use(b) = pick(b).call(5)"""
             VGroup(shape_lbl, shape)
             .arrange(DOWN, buff=0.3)
         )
-        # Place the inferred-shape group just to the right of the code
-        # block so both sit near the middle of the frame instead of being
-        # pushed against opposite edges.
         shape_grp.next_to(code, RIGHT, buff=1.2)
         shape_grp.set_y(code.get_center()[1])
 
@@ -1344,9 +1308,7 @@ fun use(b) = pick(b).call(5)"""
             part1, code, kw_box1, kw_box2, shape_grp, union_lbl, contrast,
         )))
 
-        # =====================================================================
         # Part 2 — @dynamic annotation: opt-out of specialising a parameter.
-        # =====================================================================
         part2 = Text(
             "2. @dynamic: opt out of specialising a parameter.",
             font_size=26, weight=BOLD, color=GREEN_D,
@@ -1361,12 +1323,9 @@ fun use(b) = pick(b).call(5)"""
         self.play(FadeIn(explain))
         self.wait(0.6)
 
-        # The pow signature itself, animated from `pow(x, n)` -> `pow(@dynamic x, n)`.
         sig_before = mls("fun pow(x, n) = ...").scale(0.95)
         sig_after = mls("fun pow(@dynamic x, n) = ...").scale(0.95)
         sig_before.next_to(explain, DOWN, buff=0.6)
-        # Keep ``sig_after`` horizontally centred so the @dynamic insertion
-        # doesn't shove the code block off to the right of the slide.
         sig_after.next_to(explain, DOWN, buff=0.6)
 
         self.play(Write(sig_before))
@@ -1428,7 +1387,6 @@ fun use(b) = pick(b).call(5)"""
             call_line, arrow, residual_grp, x_box, kept,
         )))
         # Wipe leftover mobjects so they don't bleed into the next scene
-        # (this scene is run inside FinalVideo on a shared Scene instance).
         self.clear()
 
 
@@ -1458,7 +1416,7 @@ class Benchmarks(Scene):
         )
         time_lbls = time_chart.get_bar_labels(font_size=32)
         time_grp = VGroup(time_chart, time_lbls)
-        time_title = Text("Runtime (lower is better)", font_size=24, weight=BOLD)
+        time_title = Text("Runtime", font_size=24, weight=BOLD)
         time_box = (
             VGroup(time_title, time_grp)
             .arrange(DOWN, buff=0.2)
@@ -1466,7 +1424,7 @@ class Benchmarks(Scene):
             .shift(DOWN * 0.4)
         )
 
-        # JS code size — 27K (vanilla compile) vs 73K (dynamic-staging output).
+        # JS code size — 27K vs 73K .
         size_chart = BarChart(
             values=[27, 73],
             bar_names=["original", "staged"],
@@ -1563,70 +1521,52 @@ class Benchmarks(Scene):
 
 
 class MVPDemo(ThreeDScene):
-    """A 3D walk-through of *Model · View · Projection* — the matrix chain
-    every graphics pipeline applies to every vertex.  We use a small cube as
-    the model and apply the same primitives our ``Transform3D`` benchmark
-    uses (``scale``, ``rotateX/Y/Z``, ``transform``) so the audience sees
-    *what those matrices actually do*.
-
-    Everything is animated against a real ``ThreeDAxes`` so the viewer can
-    follow the cube's journey from local → world → view → screen.
-    """
 
     def construct(self):
         bench_lead = Text(
             "Our benchmark: a 3-D Model · View · Projection pipeline.",
             font_size=28, weight=BOLD, color=ORANGE,
         )
-        bench_sub = Text(
-            "It's the matrix chain every graphics renderer applies to every vertex\n",
-            font_size=22, color=GREY_B,
-        ).next_to(bench_lead, DOWN, buff=0.3)
-        bench_grp = VGroup(bench_lead, bench_sub).move_to(ORIGIN)
+        bench_grp = VGroup(bench_lead).move_to(ORIGIN)
 
-        bench_sub.set_opacity(0)
-        self.add_fixed_in_frame_mobjects(bench_lead, bench_sub)
+        self.add_fixed_in_frame_mobjects(bench_lead)
         self.play(FadeIn(bench_lead))
-        self.play(bench_sub.animate.set_opacity(1))
         self.wait(2.5)
         self.play(FadeOut(bench_grp))
-        self.remove(bench_lead, bench_sub)
+        self.remove(bench_lead)
 
         # ----- Fixed-in-frame title strip ------------------------------------
         head = Text("Model · View · Projection",
                     weight=BOLD, font_size=42)
         head.to_edge(UP)
-        sub = Text(
-            "Every frame: thousands of vertices flow through "
-            "Model → View → Projection.",
-            font_size=20, color=GREY_B,
-        ).next_to(head, DOWN, buff=0.18)
-        self.add_fixed_in_frame_mobjects(head, sub)
-        self.play(FadeIn(head), FadeIn(sub))
+        self.add_fixed_in_frame_mobjects(head)
+        self.play(FadeIn(head))
 
         # ----- 3D axes --------------------------------------------------------
         axes = ThreeDAxes(
             x_range=[-4, 4, 1], y_range=[-4, 4, 1], z_range=[-3, 3, 1],
-            x_length=4.0, y_length=4.0, z_length=3.0,  # further reduced to avoid title overlap
+            x_length=4.8, y_length=4.8, z_length=3.6,
+            axis_config={
+                "stroke_width": 1.5,
+                "include_tip": True,
+                "tip_length": 0.18,
+                "tip_width": 0.14,
+            },
         )
         x_lbl = axes.get_x_axis_label("x", edge=RIGHT, direction=RIGHT)
         y_lbl = axes.get_y_axis_label("y", edge=UP,    direction=UP)
         z_lbl = axes.get_z_axis_label("z", edge=OUT,   direction=OUT)
+        for lbl in (x_lbl, y_lbl, z_lbl):
+            lbl.scale(0.55)
+        # Camera stays in a 3-D perspective view for the whole scene so the
+        # axes always look 3D. The conceptual "camera looking down -z" is
+        # represented by the Cone marker placed on +z pointing -z.
         self.set_camera_orientation(phi=68 * DEGREES, theta=-50 * DEGREES,
                                     distance=10)
         self.play(Create(axes), FadeIn(VGroup(x_lbl, y_lbl, z_lbl)))
 
-        # ----- Status banner shown in the upper-left corner ------------------
-        stage_box = Rectangle(width=4.6, height=0.55, stroke_color=YELLOW_E,
-                              stroke_width=2, fill_color=BLACK,
-                              fill_opacity=0.6).to_corner(UL).shift(DOWN * 1.0)
-        stage_lbl = Text("Phase:", font_size=20, color=GREY_B)
-        stage_val = Text("local space", font_size=22, color=BLUE_C, weight=BOLD)
-        VGroup(stage_lbl, stage_val).arrange(RIGHT, buff=0.2).move_to(
-            stage_box.get_center())
-        self.add_fixed_in_frame_mobjects(stage_box, stage_lbl, stage_val)
-        self.play(FadeIn(stage_box), FadeIn(stage_lbl), FadeIn(stage_val))
-
+        # ----- Status banner removed; stage changes are reflected through
+        # the inline captions only.
         caption_holder = {"caption": None}
 
         def show_caption(text, color):
@@ -1640,11 +1580,7 @@ class MVPDemo(ThreeDScene):
             caption_holder["caption"] = new
 
         def set_stage(text, color):
-            new = Text(text, font_size=22, color=color, weight=BOLD)
-            new.move_to(stage_val.get_center()).align_to(stage_val, LEFT)
-            self.add_fixed_in_frame_mobjects(new)
-            self.play(FadeOut(stage_val), FadeIn(new), run_time=0.5)
-            return new
+            return None
 
         # =====================================================================
         # MODEL  M = T · Rz · Ry · Rx · S    (object → world)
@@ -1694,10 +1630,6 @@ class MVPDemo(ThreeDScene):
             GREEN_D,
         )
 
-        # Place the camera marker on the +z axis pointing down -z so it
-        # actually matches the "looking down −z" caption (previously the
-        # cone was sitting on −y pointing along +y, which contradicted the
-        # narrated convention).
         cam = Cone(
             base_radius=0.35, height=0.7, direction=-OUT,
             fill_color=YELLOW_E, fill_opacity=0.8,
@@ -1710,17 +1642,12 @@ class MVPDemo(ThreeDScene):
         self.play(FadeIn(cam), FadeIn(cam_lbl))
         self.wait(0.3)
 
-        # Swing the viewport so we are *behind* the camera, looking down
-        # −z just like the camera does.
-        self.move_camera(phi=0 * DEGREES, theta=-90 * DEGREES,
-                         run_time=2.0)
+        # Camera was already top-down from the start; no swing needed here.
         self.wait(0.4)
 
         stage_val = set_stage("camera space", YELLOW_E)
 
-        # =====================================================================
         # PROJECTION  P  (camera → screen)
-        # =====================================================================
         show_caption(
             "Projection: collapse the depth axis so 3D becomes 2D pixels.",
             YELLOW_E,
@@ -1728,14 +1655,10 @@ class MVPDemo(ThreeDScene):
 
         world = VGroup(axes, x_lbl, y_lbl, z_lbl, cube, cam)
         flatten = np.diag([1.0, 1.0, 0.001])
-        # First swing to a near-side view so z is visibly vertical on screen.
-        self.move_camera(phi=85 * DEGREES, theta=-90 * DEGREES, run_time=1.2)
-        # Now visibly squish the world flat into the xy-plane.
+        # Squish flat into the xy-plane while keeping the 3-D perspective
+        # camera so the audience sees depth collapse from a familiar angle.
         self.play(ApplyMatrix(flatten, world), run_time=1.6)
-        self.wait(0.3)
-        # Finally rotate up to look head-on at the resulting 2-D plane.
-        self.move_camera(phi=0 * DEGREES, theta=-90 * DEGREES, run_time=1.2)
-        self.wait(0.4)
+        self.wait(0.6)
 
         stage_val = set_stage("screen space", RED_C)
 
@@ -1744,13 +1667,11 @@ class MVPDemo(ThreeDScene):
         # Hide the 3D coordinate system before showing the dynamic staging result
         self.play(FadeOut(world), run_time=0.8)
 
-        # =====================================================================
         # Reveal the pipeline name in the centre of the (now flat) frame.
         # Hide the (now-flattened) 3-D world first so it doesn't sit behind
         # the title as visual noise.
-        # =====================================================================
         cleanup_anims = [
-            FadeOut(VGroup(stage_box, stage_lbl, stage_val, cam_lbl)),
+            FadeOut(VGroup(cam_lbl)),
         ]
         if caption_holder["caption"] is not None:
             cleanup_anims.append(FadeOut(caption_holder["caption"]))

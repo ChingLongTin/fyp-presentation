@@ -64,7 +64,7 @@ FINAL_OUT="FinalVideo.mp4"
 # loudnorm normalises the bgm to a consistent perceived loudness so the
 # final mix is actually audible (the raw mp3 is mastered very quietly).
 ffmpeg -y -i "$SILENT_OUT" -i assets/bgm.mp3 \
-  -filter_complex "[1:a]loudnorm=I=-18:TP=-2:LRA=11,afade=t=in:st=0:d=2,afade=t=out:st=${FADE_OUT_START}:d=2[a]" \
+  -filter_complex "[1:a]loudnorm=I=-40:TP=-2:LRA=11,afade=t=in:st=0:d=2,afade=t=out:st=${FADE_OUT_START}:d=2[a]" \
   -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -shortest "$FINAL_OUT"
 
 echo "=========================================="
