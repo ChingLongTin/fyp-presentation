@@ -559,6 +559,69 @@ class OurApproach(Scene):
         )
         self.wait(0.4)
 
+class Instrumentation(Scene):
+    def construct(self):
+        head = section_title("Stage 1: instrumentation")
+        self.add(head)
+
+        ds_src_text = """staged module M with
+  fun pow(n, x) = if n is
+    0 then 1
+    else x * pow(n - 1, x)
+  fun cube(x) = pow(x, 3)"""
+
+        ds_instr_text = """staged module M with
+  fun pow_instr() = FunDefn("pow", ["n", "x"], Match("n",
+      [[Lit(0), Return(1)]],
+      Assign("tmp", Call("-", "n", Lit(1)),
+      Assign("tmp1", Call("pow", ["tmp", "x"]),
+      Return(Call("*", ["x", "tmp1"]))))
+    ))
+  fun cube_instr() = Return(Call("pow", ["x", Lit(3)]))"""
+        src = mls(ds_src_text).scale(0.7)
+        instr = mls(ds_instr_text).scale(0.5)
+        g = VGroup(src, instr).arrange(RIGHT)
+
+        self.add(src)
+
+        desc = (
+            Text(
+                "We convert functions into a reflected representation which can be manipulated in symbolic execution."
+            )
+            .move_to(g)
+            .shift(DOWN * 2)
+        )
+        self.play(FadeIn(g, desc))
+
+        # show corresponding reflected blocks in MLscript
+        src_boxes = [
+            SurroundingRectangle(src.code_lines[1:4]),
+            SurroundingRectangle(src.code_lines[2]),
+            SurroundingRectangle(src.code_lines[3][10:13]),
+            SurroundingRectangle(src.code_lines[3][6:]),
+            SurroundingRectangle(src.code_lines[3][4:]),
+        ]
+        instr_boxes = [
+            SurroundingRectangle(instr.code_lines[1:7]),
+            SurroundingRectangle(instr.code_lines[2]),
+            SurroundingRectangle(instr.code_lines[3]),
+            SurroundingRectangle(instr.code_lines[4]),
+            SurroundingRectangle(instr.code_lines[5]),
+        ]
+
+        self.play(FadeIn(src_boxes[0], instr_boxes[0]))
+
+        for s, i in zip(src_boxes[1:], instr_boxes[1:]):
+            self.play(Transform(src_boxes[0], s), Transform(instr_boxes[0], i))
+        self.wait(0.4)
+
+        next_title = section_title("Stage 1: symbolic execution")
+        self.play(
+            FadeOut(desc, g),
+            FadeTransform(head, next_title),
+            FadeOut(src_boxes[0], instr_boxes[0]),
+        )
+        self.wait(0.4)
 
 # -----------------------------------------------------------------------------
 # 5. Worked example — pow
@@ -1817,6 +1880,7 @@ class FinalVideo(ThreeDScene):
             Motivation,
             MSPApproach,
             OurApproach,
+            Instrumentation,
             PowExample,
             Novelty,
             MVPDemo,

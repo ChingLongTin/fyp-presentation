@@ -23,6 +23,7 @@ SCENES=(
     Motivation
     MSPApproach
     OurApproach
+    Instrumentation
     PowExample
     Novelty
     MVPDemo
