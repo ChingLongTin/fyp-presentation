@@ -1857,12 +1857,6 @@ class Closing(Scene):
 class FinalVideo(ThreeDScene):
     """Render the full ~3 minute video in one go.
 
-    Inherits from ThreeDScene (not Scene) so that MVPDemo's 3D camera
-    calls — `add_fixed_in_frame_mobjects`, `set_camera_orientation`,
-    `move_camera` — resolve when its `construct` body is run inline here.
-    A ThreeDScene behaves like a regular Scene for all the 2D segments.
-    """
-
     def construct(self):
         for cls in (
             TitleCard,
