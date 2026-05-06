@@ -1,3 +1,8 @@
-.vscode/*
-video/media/*
-video/__pycache__/*
+.vscode
+.venv/
+.DS_Store
+**/*.svg
+**/*.tex
+video/media/
+video/FinalVideo.mp4
+video/__pycache__
