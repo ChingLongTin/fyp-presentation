@@ -176,7 +176,7 @@ fun rotate45(m) =
             buff=0.04,
         )
         wasted_lbl = Text(
-            "Array look-ups every cell",
+            "look up every entry in the vectors",
             font_size=18,
             color=RED_C,
         ).next_to(cols, DOWN, buff=0.45)
@@ -313,7 +313,7 @@ module M with
 class OurApproach(Scene):
     def construct(self):
         head = Text(
-            "Same pipeline, far less ceremony",
+            "Similar to MSP pipeline, but far less annotations",
             weight=BOLD,
             font_size=42,
         ).to_edge(UP)
@@ -859,6 +859,9 @@ M.cube(5)"""
         cube_focus_box = SurroundingRectangle(
             cube_line, color=BLUE_C, buff=0.04, stroke_width=2,
         )
+        # The status banner should follow the focus: we are no longer
+        # specialising pow(…), we are now working on cube.
+        set_status("cube(x)")
         self.play(Create(cube_focus_box), run_time=0.6)
         self.wait(0.4)
 
@@ -982,35 +985,30 @@ M.cube(5)"""
 
         # ---- Step (6): with the recursion fully unrolled
         call_msg = Text(
-            "Drop  staged  — M is now a plain module; inline M.cube(5) too.",
+            "Now we obtain the final residual module M",
             font_size=22, color=GREEN_D, weight=BOLD,
         ).to_edge(DOWN, buff=0.4)
-        self.play(FadeTransform(elim_msg, call_msg), run_time=0.7)
 
-        # Morph  `staged module M with`  →  `module M with`  in place.
+        # Morph  `staged module M with`  →  `module M with`  in place,
+        # simultaneously with the call_msg appearing.  We don't morph the
+        # `M.cube(5)` line — cube has already been inlined to x*x*x in the
+        # cache, so leaving the source call site as-is keeps the slide
+        # uncluttered.
         plain_module_src = mls("module M with").scale(0.55)
         plain_module_line = plain_module_src.code_lines[0]
         plain_module_line.move_to(
             code.code_lines[0], aligned_edge=LEFT,
         )
 
-        # Morph  `M.cube(5)`  →  `5 * 5 * 5`  in place.
-        inlined_call_src = mls("5 * 5 * 5").scale(0.55)
-        inlined_call_line = inlined_call_src.code_lines[0]
-        inlined_call_line.move_to(
-            code.code_lines[5], aligned_edge=LEFT,
-        )
-
         self.play(
+            FadeTransform(elim_msg, call_msg),
             FadeTransform(code.code_lines[0], plain_module_line),
-            FadeTransform(code.code_lines[5], inlined_call_line),
             FadeOut(entry_box),
-            run_time=1.2,
+            run_time=1.0,
         )
-        # Keep the originals from re-appearing during the final FadeOut.
+        # Keep the original from re-appearing during the final FadeOut.
         code.code_lines[0].set_opacity(0)
-        code.code_lines[5].set_opacity(0)
-        self.remove(code.code_lines[0], code.code_lines[5])
+        self.remove(code.code_lines[0])
         self.wait(2.5)
 
         self.play(
@@ -1019,9 +1017,14 @@ M.cube(5)"""
                 legend,
                 sf_grp, sc_grp, *sc_rows_visible, call_msg,
                 sf_rows[4][0], new_cube_body,
-                plain_module_line, inlined_call_line,
+                plain_module_line,
             )),
         )
+        # Belt-and-braces: when this scene runs as part of FinalVideo, the
+        # Scene instance is shared across sub-scenes — ensure no leftover
+        # mobjects (e.g. opacity-0 children whose alpha gets restored by
+        # FadeOut.clean_up_from_scene) survive into the next scene.
+        self.clear()
 
 
 # -----------------------------------------------------------------------------
@@ -1326,14 +1329,14 @@ fun use(b) = pick(b).call(5)"""
         union_lbl = Text(
             "Union shape: track every class the value could be at runtime.",
             font_size=22, color=GREEN_D,
-        ).to_edge(DOWN, buff=0.55)
+        ).to_edge(DOWN, buff=1.6)
         self.play(FadeIn(union_lbl))
         self.wait(2.0)
 
         contrast = Text(
-            "Hybrid Partial Evaluation [Shali & Cook, 2011] gives up here — we don't.",
+            "Hybrid Partial Evaluation [Shali & Cook, 2011] gives up here, our approach doesn't.",
             font_size=22, color=YELLOW_E,
-        ).to_edge(DOWN, buff=0.2)
+        ).to_edge(DOWN, buff=0.6)
         self.play(FadeIn(contrast))
         self.wait(2.5)
 
@@ -1414,7 +1417,7 @@ fun use(b) = pick(b).call(5)"""
             color=YELLOW, buff=0.04, stroke_width=2,
         )
         kept = Text(
-            "x stays a runtime parameter — only n=3 is baked in.",
+            "x stays a runtime parameter: only n=3 is baked in.",
             font_size=22, color=GREEN_D, weight=BOLD,
         ).to_edge(DOWN, buff=0.45)
         self.play(Create(x_box), FadeIn(kept))
@@ -1424,6 +1427,9 @@ fun use(b) = pick(b).call(5)"""
             head, part2, explain, sig_after, ann_box,
             call_line, arrow, residual_grp, x_box, kept,
         )))
+        # Wipe leftover mobjects so they don't bleed into the next scene
+        # (this scene is run inside FinalVideo on a shared Scene instance).
+        self.clear()
 
 
 # -----------------------------------------------------------------------------
@@ -1601,7 +1607,7 @@ class MVPDemo(ThreeDScene):
         # ----- 3D axes --------------------------------------------------------
         axes = ThreeDAxes(
             x_range=[-4, 4, 1], y_range=[-4, 4, 1], z_range=[-3, 3, 1],
-            x_length=6, y_length=6, z_length=4.5,
+            x_length=4.0, y_length=4.0, z_length=3.0,  # further reduced to avoid title overlap
         )
         x_lbl = axes.get_x_axis_label("x", edge=RIGHT, direction=RIGHT)
         y_lbl = axes.get_y_axis_label("y", edge=UP,    direction=UP)
@@ -1651,28 +1657,28 @@ class MVPDemo(ThreeDScene):
         self.play(FadeIn(cube))
         self.wait(0.4)
 
-        show_caption("scale(0.9, 1.6, 0.7) — stretch along each axis", BLUE_C)
+        show_caption("scale(0.9, 1.6, 0.7): stretch along each axis", BLUE_C)
         S = np.diag([0.9, 1.6, 0.7])
         self.play(ApplyMatrix(S, cube), run_time=1.4)
         self.wait(0.3)
 
-        show_caption("rotateX(45°) — pitch around the x-axis", BLUE_C)
+        show_caption("rotateX(45°): pitch around the x-axis", BLUE_C)
         self.play(Rotate(cube, angle=PI / 4, axis=RIGHT,
                          about_point=axes.c2p(0, 0, 0)), run_time=1.3)
         self.wait(0.2)
 
-        show_caption("rotateY(35°) — yaw around the y-axis", BLUE_C)
+        show_caption("rotateY(35°): yaw around the y-axis", BLUE_C)
         self.play(Rotate(cube, angle=35 * DEGREES, axis=UP,
                          about_point=axes.c2p(0, 0, 0)), run_time=1.3)
         self.wait(0.2)
 
-        show_caption("rotateZ(20°) — roll around the z-axis", BLUE_C)
+        show_caption("rotateZ(20°): roll around the z-axis", BLUE_C)
         self.play(Rotate(cube, angle=20 * DEGREES, axis=OUT,
                          about_point=axes.c2p(0, 0, 0)), run_time=1.1)
         self.wait(0.2)
 
         show_caption(
-            "transform(2, 1, 0.5) — translate to its world position",
+            "transform(2, 1, 0.5): translate to its world position",
             BLUE_C,
         )
         target = axes.c2p(2, 1, 0.5)
@@ -1684,22 +1690,29 @@ class MVPDemo(ThreeDScene):
 
         show_caption(
             "View: rotate the world so the camera sits at the origin, "
-            "looking down −z.",
+            "looking down -z.",
             GREEN_D,
         )
 
-        cam = Cone(base_radius=0.35, height=0.7,
-                   fill_color=YELLOW_E, fill_opacity=0.8,
-                   stroke_color=YELLOW_E)
-        cam.rotate(PI / 2, axis=RIGHT)  # point along -y
-        cam.move_to(axes.c2p(0, -3.5, 0.5))
+        # Place the camera marker on the +z axis pointing down -z so it
+        # actually matches the "looking down −z" caption (previously the
+        # cone was sitting on −y pointing along +y, which contradicted the
+        # narrated convention).
+        cam = Cone(
+            base_radius=0.35, height=0.7, direction=-OUT,
+            fill_color=YELLOW_E, fill_opacity=0.8,
+            stroke_color=YELLOW_E,
+        )
+        cam.move_to(axes.c2p(0, 0, 3))
         cam_lbl = Text("camera", font_size=16, color=YELLOW_E)
         self.add_fixed_in_frame_mobjects(cam_lbl)
         cam_lbl.to_corner(UR).shift(DOWN * 1.0)
         self.play(FadeIn(cam), FadeIn(cam_lbl))
         self.wait(0.3)
 
-        self.move_camera(phi=80 * DEGREES, theta=-90 * DEGREES,
+        # Swing the viewport so we are *behind* the camera, looking down
+        # −z just like the camera does.
+        self.move_camera(phi=0 * DEGREES, theta=-90 * DEGREES,
                          run_time=2.0)
         self.wait(0.4)
 
@@ -1725,39 +1738,23 @@ class MVPDemo(ThreeDScene):
         self.wait(0.4)
 
         stage_val = set_stage("screen space", RED_C)
+
         self.wait(0.6)
+
+        # Hide the 3D coordinate system before showing the dynamic staging result
+        self.play(FadeOut(world), run_time=0.8)
 
         # =====================================================================
         # Reveal the pipeline name in the centre of the (now flat) frame.
         # Hide the (now-flattened) 3-D world first so it doesn't sit behind
         # the title as visual noise.
         # =====================================================================
-        mvp_title = Text(
-            "Model · View · Projection",
-            weight=BOLD, font_size=64, color=YELLOW,
-        )
-        self.add_fixed_in_frame_mobjects(mvp_title)
-        self.play(
-            FadeOut(VGroup(axes, x_lbl, y_lbl, z_lbl, cube, cam)),
-            FadeOut(head), FadeOut(sub),
-            FadeIn(mvp_title, scale=0.9),
-            run_time=0.9,
-        )
-        self.wait(1.5)
-
-        show_caption(
-            "When M, V, P are fixed, staging fuses the chain "
-            "into a few multiply-adds per vertex.",
-            YELLOW,
-        )
-        self.wait(2.5)
-
-        self.play(
+        cleanup_anims = [
             FadeOut(VGroup(stage_box, stage_lbl, stage_val, cam_lbl)),
-            FadeOut(mvp_title),
-            FadeOut(caption_holder["caption"]),
-            run_time=0.8,
-        )
+        ]
+        if caption_holder["caption"] is not None:
+            cleanup_anims.append(FadeOut(caption_holder["caption"]))
+        self.play(*cleanup_anims, run_time=0.8)
         caption_holder["caption"] = None
 
         teaser_lbl = Text(
@@ -1771,7 +1768,7 @@ class MVPDemo(ThreeDScene):
                       color=YELLOW_E, stroke_width=4)
         arrow_lbl = Text("staging", font_size=18, color=YELLOW_E)
         arrow_lbl.next_to(arrow, UP, buff=0.08)
-        # A representative residual: just a handful of multiply-adds.
+
         after_code = mls(
             "fun project(v) =\n"
             "  [a00*v.0 + a01*v.1 + a02*v.2 + a03,\n"
@@ -1810,6 +1807,9 @@ class MVPDemo(ThreeDScene):
 
         # Cleanup.
         self.play(FadeOut(VGroup(teaser_lbl, teaser)))
+        # When this scene runs as part of FinalVideo, wipe any leftover
+        # mobjects so they don't bleed into the next sub-scene.
+        self.clear()
 
 
 # -----------------------------------------------------------------------------
@@ -1879,3 +1879,7 @@ class FinalVideo(ThreeDScene):
             Closing,
         ):
             cls.construct(self)
+            # Wipe leftover mobjects (including any whose opacity got
+            # restored by FadeOut.clean_up_from_scene) so they don't bleed
+            # into the next sub-scene as visible overlap with its title.
+            self.clear()
