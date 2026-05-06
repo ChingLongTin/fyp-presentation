@@ -1855,7 +1855,6 @@ class Closing(Scene):
 # -----------------------------------------------------------------------------
 
 class FinalVideo(ThreeDScene):
-    """Render the full ~3 minute video in one go.
 
     def construct(self):
         for cls in (
