@@ -4,14 +4,17 @@ set -e
 # Move to the script's directory (video/)
 cd "$(dirname "$0")"
 
-# Default to 1080p60 (high quality). Use -ql for 480p15 (low quality preview).
+# Default to 1080p60 (high quality). Use -ql for 480p15 (low quality preview)
+# or -qk for 2160p60 (4K).
 QUALITY=${1:--qh}
 if [ "$QUALITY" = "-ql" ]; then
     RESOLUTION_DIR="480p15"
 elif [ "$QUALITY" = "-qh" ]; then
     RESOLUTION_DIR="1080p60"
+elif [ "$QUALITY" = "-qk" ]; then
+    RESOLUTION_DIR="2160p60"
 else
-    echo "Unknown quality: $QUALITY. Use -ql or -qh to specify the source directory."
+    echo "Unknown quality: $QUALITY. Use -ql, -qh, or -qk to specify the source directory."
     exit 1
 fi
 
@@ -29,16 +32,27 @@ SCENES=(
 
 echo "=== Assembling scenes from $RESOLUTION_DIR ==="
 VIDEOS_DIR="media/videos/final_video/$RESOLUTION_DIR"
-CONCAT_LIST="$VIDEOS_DIR/_concat.txt"
-
-# Build the concat file list
-> "$CONCAT_LIST"
-for SCENE in "${SCENES[@]}"; do
-    echo "file '${SCENE}.mp4'" >> "$CONCAT_LIST"
-done
 
 SILENT_OUT="$VIDEOS_DIR/FinalVideo_silent.mp4"
-ffmpeg -y -f concat -safe 0 -i "$CONCAT_LIST" -c copy "$SILENT_OUT"
+
+# If Manim already produced a concatenated FinalVideo.mp4 (e.g. via
+# `manim -qh final_video.py FinalVideo`), use it directly and skip the
+# per-scene concat step.
+MANIM_CONCAT="$VIDEOS_DIR/FinalVideo.mp4"
+if [ -f "$MANIM_CONCAT" ]; then
+    echo "Found pre-concatenated $MANIM_CONCAT — skipping scene concat."
+    SILENT_OUT="$MANIM_CONCAT"
+else
+    CONCAT_LIST="$VIDEOS_DIR/_concat.txt"
+
+    # Build the concat file list
+    > "$CONCAT_LIST"
+    for SCENE in "${SCENES[@]}"; do
+        echo "file '${SCENE}.mp4'" >> "$CONCAT_LIST"
+    done
+
+    ffmpeg -y -f concat -safe 0 -i "$CONCAT_LIST" -c copy "$SILENT_OUT"
+fi
 
 echo "=== Mixing audio ==="
 DUR=$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$SILENT_OUT")

@@ -1293,7 +1293,10 @@ fun pick(b) =
   if b then new B1(2) else new B2(3)
 fun use(b) = pick(b).call(5)"""
         ).scale(0.7)
-        code.next_to(part1, DOWN, buff=0.45).to_edge(LEFT, buff=0.6)
+        # Pull the code block toward the centre instead of slamming it to
+        # the left edge so the viewer doesn't have to look as far across
+        # the slide.
+        code.next_to(part1, DOWN, buff=0.45).shift(LEFT * 2.4)
 
         shape_lbl = Text("inferred shape of pick(b):",
                          font_size=22, color=GREY_B)
@@ -1301,8 +1304,11 @@ fun use(b) = pick(b).call(5)"""
         shape_grp = (
             VGroup(shape_lbl, shape)
             .arrange(DOWN, buff=0.3)
-            .to_edge(RIGHT, buff=0.6)
         )
+        # Place the inferred-shape group just to the right of the code
+        # block so both sit near the middle of the frame instead of being
+        # pushed against opposite edges.
+        shape_grp.next_to(code, RIGHT, buff=1.2)
         shape_grp.set_y(code.get_center()[1])
 
         self.play(Write(code))
@@ -1356,15 +1362,20 @@ fun use(b) = pick(b).call(5)"""
         sig_before = mls("fun pow(x, n) = ...").scale(0.95)
         sig_after = mls("fun pow(@dynamic x, n) = ...").scale(0.95)
         sig_before.next_to(explain, DOWN, buff=0.6)
-        sig_after.move_to(sig_before, aligned_edge=LEFT)
+        # Keep ``sig_after`` horizontally centred so the @dynamic insertion
+        # doesn't shove the code block off to the right of the slide.
+        sig_after.next_to(explain, DOWN, buff=0.6)
 
         self.play(Write(sig_before))
         self.wait(0.4)
 
         ann_caption = Text(
-            "Mark x as @dynamic — staging will keep x as a runtime value.",
+            "Mark x as @dynamic: staging will keep x as a runtime value.",
             font_size=22, color=YELLOW_E,
-        ).next_to(sig_after, DOWN, buff=0.4)
+        )
+        # Anchor the caption to the screen centre (not to the code block)
+        # so it stays centred even though sig_after is wider than sig_before.
+        ann_caption.next_to(sig_after, DOWN, buff=0.4).set_x(0)
         self.play(FadeTransform(sig_before, sig_after), FadeIn(ann_caption))
 
         # Highlight the @dynamic token.
@@ -1562,8 +1573,7 @@ class MVPDemo(ThreeDScene):
             font_size=28, weight=BOLD, color=ORANGE,
         )
         bench_sub = Text(
-            "It's the matrix chain every graphics renderer applies to every vertex —\n"
-            "a perfect stress test for dynamic staging.",
+            "It's the matrix chain every graphics renderer applies to every vertex\n",
             font_size=22, color=GREY_B,
         ).next_to(bench_lead, DOWN, buff=0.3)
         bench_grp = VGroup(bench_lead, bench_sub).move_to(ORIGIN)
@@ -1604,7 +1614,7 @@ class MVPDemo(ThreeDScene):
         stage_box = Rectangle(width=4.6, height=0.55, stroke_color=YELLOW_E,
                               stroke_width=2, fill_color=BLACK,
                               fill_opacity=0.6).to_corner(UL).shift(DOWN * 1.0)
-        stage_lbl = Text("Stage:", font_size=20, color=GREY_B)
+        stage_lbl = Text("Phase:", font_size=20, color=GREY_B)
         stage_val = Text("local space", font_size=22, color=BLUE_C, weight=BOLD)
         VGroup(stage_lbl, stage_val).arrange(RIGHT, buff=0.2).move_to(
             stage_box.get_center())
