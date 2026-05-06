@@ -861,11 +861,11 @@ M.cube(5)"""
             dead_box = SurroundingRectangle(dead, color=RED, buff=0.04)
             cross = Cross(dead_box, color=RED, stroke_width=4)
             live_box = SurroundingRectangle(live, color=GREEN_D, buff=0.04)
-            self.play(Create(dead_box), Create(cross), run_time=0.85)
+            self.play(Create(dead_box), Create(cross), run_time=0.85 / (i + 1))
             self.play(
                 dead.animate.set_opacity(0.25),
                 Create(live_box),
-                run_time=0.75,
+                run_time=0.75 / (i + 1),
             )
 
             # (d) Move a copy of the live branch toward the cache row, then
@@ -876,14 +876,14 @@ M.cube(5)"""
                 live_copy.animate
                     .scale(0.55)
                     .move_to(target_body_cell.get_center()),
-                run_time=1.35,
+                run_time=1.35 / (i + 1),
             )
             sf_rows[i][0].set_opacity(1)
             target_body_cell.set_opacity(1)
             self.play(
                 FadeIn(sf_rows[i][0], shift=RIGHT * 0.15),
                 FadeTransform(live_copy, target_body_cell),
-                run_time=0.9,
+                run_time=0.9 / (i + 1),
             )
             self.wait(0.6)
 
@@ -893,7 +893,7 @@ M.cube(5)"""
                 FadeOut(cross),
                 FadeOut(live_box),
                 dead.animate.set_opacity(1.0),
-                run_time=0.55,
+                run_time=0.55 / (i + 1),
             )
 
         # Final step.  Now that all four pow-specialisations are in the
@@ -908,7 +908,7 @@ M.cube(5)"""
 
         cube_line = code.code_lines[4]
         cube_focus_box = SurroundingRectangle(
-            cube_line, color=BLUE_C, buff=0.04, stroke_width=2,
+            cube_line[11:], color=BLUE_C, buff=0.04, stroke_width=2,
         )
 
         set_status("cube(x)")
