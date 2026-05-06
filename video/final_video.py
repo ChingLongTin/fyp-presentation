@@ -1889,7 +1889,7 @@ class FinalVideo(ThreeDScene):
             Bibliography,
         ):
             cls.construct(self)
-            # Wipe leftover mobjects (including any whose opacity got
-            # restored by FadeOut.clean_up_from_scene) so they don't bleed
-            # into the next sub-scene as visible overlap with its title.
             self.clear()
+            self.set_camera_orientation(
+                phi=0, theta=-90 * DEGREES, gamma=0, zoom=1,
+            )
