@@ -792,9 +792,9 @@ M.cube(5)"""
 
             # (c) Animate the dead branch crossing out, the live one glowing.
             if k > 0:
-                dead, live = then_line, else_line
+                dead, live = then_line, else_line[4:]
             else:
-                dead, live = else_line, then_line
+                dead, live = else_line, then_line[-1]
             dead_box = SurroundingRectangle(dead, color=RED, buff=0.04)
             cross = Cross(dead_box, color=RED, stroke_width=4)
             live_box = SurroundingRectangle(live, color=GREEN_D, buff=0.04)
@@ -856,6 +856,12 @@ M.cube(5)"""
         cube_after_full = mls("  fun cube(x) = pow3(x)").scale(0.55)
         cube_after = cube_after_full.code_lines[0]
         cube_after.move_to(cube_line, aligned_edge=LEFT)
+        cube_after_focus_box = SurroundingRectangle(
+            cube_after[11:],
+            color=BLUE_C,
+            buff=0.04,
+            stroke_width=2,
+        )
         replaced_msg = Text(
             "pow(x, 3) is in the cache  \u2192  call pow3(x) directly.",
             font_size=20, color=BLUE_C, weight=BOLD,
@@ -863,6 +869,7 @@ M.cube(5)"""
         self.play(
             FadeTransform(cube_line, cube_after),
             FadeIn(replaced_msg),
+            ReplacementTransform(cube_focus_box, cube_after_focus_box),
             run_time=1.1,
         )
         # Hide the original cube_line so the final FadeOut(code) does not
@@ -1782,6 +1789,23 @@ class Closing(Scene):
 
 
 # -----------------------------------------------------------------------------
+# 9. Bibliography
+# -----------------------------------------------------------------------------
+
+
+class Bibliography(Scene):
+    def construct(self):
+        self.add(
+            Tex(
+                r"""\raggedright{Walid Taha. A gentle introduction to multi-stage programming. In \textit{Domain-Specific Program Generation: International Seminar, Dagstuhl Castle, Germany, March 23-28, 2003. Revised Papers}, pages 30–50. Springer, 2004.}
+            \\ \vspace{1em}
+            \raggedright{A. Shali and W. R. Cook, “Hybrid partial evaluation,” in \textit{Proceedings of the 2011 ACM international conference on Object oriented programming systems languages and applications}, 2011, pp. 375–390.}"""
+            ).scale(0.6)
+        )
+        self.wait(1.0)
+
+
+# -----------------------------------------------------------------------------
 # Master scene — concatenates every segment into one ~3 minute video.
 # -----------------------------------------------------------------------------
 
@@ -1798,6 +1822,7 @@ class FinalVideo(ThreeDScene):
             MVPDemo,
             Benchmarks,
             Closing,
+            Bibliography,
         ):
             cls.construct(self)
             # Wipe leftover mobjects (including any whose opacity got

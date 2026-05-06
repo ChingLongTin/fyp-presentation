@@ -28,6 +28,7 @@ SCENES=(
     MVPDemo
     Benchmarks
     Closing
+    Bibliography
 )
 
 echo "=== Assembling scenes from $RESOLUTION_DIR ==="
