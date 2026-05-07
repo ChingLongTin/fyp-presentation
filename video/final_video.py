@@ -326,8 +326,17 @@ class OurApproach(Scene):
         # Helper: build a pipeline row for one approach.
         def build_row(label_str, label_color, src_code, residual_code,
                        res_lbl_text):
-            row_label = Text(label_str, weight=BOLD, font_size=22,
-                             color=label_color)
+            if "\n" in label_str:
+                lines = [
+                    Text(part, weight=BOLD, font_size=22, color=label_color)
+                    for part in label_str.split("\n")
+                ]
+                row_label = VGroup(*lines).arrange(
+                    DOWN, buff=0.1, aligned_edge=RIGHT,
+                )
+            else:
+                row_label = Text(label_str, weight=BOLD, font_size=22,
+                                 color=label_color)
             src_lbl = Text("source", font_size=14, color=GREY_B)
             src_grp = VGroup(src_lbl, src_code).arrange(DOWN, buff=0.1)
 
@@ -614,7 +623,7 @@ class Instrumentation(Scene):
 
         for s, i in zip(src_boxes[1:], instr_boxes[1:]):
             self.play(Transform(src_boxes[0], s), Transform(instr_boxes[0], i))
-        self.wait(0.4)
+        self.wait(2)
 
         next_title = section_title("Stage 1: symbolic execution")
         self.play(
@@ -622,7 +631,6 @@ class Instrumentation(Scene):
             FadeTransform(head, next_title),
             FadeOut(src_boxes[0], instr_boxes[0]),
         )
-        self.wait(2)
 
 # -----------------------------------------------------------------------------
 # 5. Worked example — pow
@@ -1439,7 +1447,7 @@ fun use(b) = pick(b).call(5)"""
         self.wait(2.0)
 
         contrast = Text(
-            "Hybrid Partial Evaluation [Shali & Cook, 2011] gives up here, our approach doesn't.",
+            "Hybrid Partial Evaluation [Shali & Cook, 2011] gives up here, our method doesn't.",
             font_size=22, color=YELLOW_E,
         ).to_edge(DOWN, buff=0.6)
         self.play(FadeIn(contrast))
