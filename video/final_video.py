@@ -551,7 +551,7 @@ class OurApproach(Scene):
         )))
 
         next_title = Text(
-            "Stage 1: symbolic execution", weight=BOLD, font_size=42,
+            "Stage 1: instrumentation", weight=BOLD, font_size=42,
         ).to_edge(UP)
         self.play(
             FadeTransform(VGroup(ds["arr1"], ds["arr1_lbl"]), next_title),
@@ -938,7 +938,7 @@ M.cube(5)"""
         # Hide the original cube_line so the final FadeOut(code) does not
         # briefly redraw the now-stale  fun cube(x) = pow(x, 3)  line.
         cube_line.set_opacity(0)
-        self.remove(cube_line)
+        self.remove(cube_line, cube_after_focus_box)
         self.wait(1.4)
 
         # (2): add cube as a new cache row
