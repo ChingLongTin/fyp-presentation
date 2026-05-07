@@ -1065,7 +1065,7 @@ M.cube(5)"""
 
         self.play(
             FadeOut(VGroup(
-                head, status, status_ref["call"], code, cube_inlined,
+                head, status_label, status_ref["call"], code, cube_inlined,
                 legend,
                 sf_grp, sc_grp, *sc_rows_visible, call_msg,
                 sf_rows[4][0], new_cube_body,
