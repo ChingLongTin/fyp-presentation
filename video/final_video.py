@@ -183,7 +183,6 @@ fun rotate45(m) =
         self.wait(2.0)
 
         self.play(FadeOut(wasted), FadeOut(wasted_lbl))
-        self.play(GrowArrow(arrow), FadeIn(arrow_lbl))
 
         rot_box = SurroundingRectangle(
             VGroup(c1.code_lines[8], c1.code_lines[9],
@@ -196,6 +195,8 @@ fun rotate45(m) =
         ).next_to(cols, DOWN, buff=0.45)
         self.play(Create(rot_box), FadeIn(rot_lbl))
         self.wait(1.4)
+
+        self.play(GrowArrow(arrow), FadeIn(arrow_lbl))
 
         self.play(FadeIn(l3), Write(c3), run_time=1.2)
 
@@ -316,7 +317,7 @@ fun power2 = x => x * x * 1"""
 class OurApproach(Scene):
     def construct(self):
         head = Text(
-            "MSP vs Dynamic Staging overview",
+            "MSP vs Dynamic Staging Overview",
             weight=BOLD,
             font_size=42,
         ).to_edge(UP)
@@ -406,7 +407,7 @@ class OurApproach(Scene):
         ds_residual = mls(ds_residual_text).scale(0.4)
 
         ds = build_row(
-            "Dynamic Staging", GREEN_D, ds_src, ds_residual, "residual module",
+            "Dynamic\nStaging", GREEN_D, ds_src, ds_residual, "residual module",
         )
 
         def _bg(code_mob):
@@ -557,7 +558,7 @@ class OurApproach(Scene):
             FadeTransform(VGroup(ds["arr1"], ds["arr1_lbl"]), next_title),
             run_time=1.0,
         )
-        self.wait(0.4)
+        self.wait(0.5)
 
 class Instrumentation(Scene):
     def construct(self):
@@ -586,7 +587,7 @@ class Instrumentation(Scene):
 
         desc = (
             Text(
-                "We convert functions into a reflected representation which can be manipulated in symbolic execution."
+                "We convert functions into a reflected representation which can be manipulated in symbolic execution in stage 1."
             )
             .move_to(g)
             .shift(DOWN * 2)
@@ -621,7 +622,7 @@ class Instrumentation(Scene):
             FadeTransform(head, next_title),
             FadeOut(src_boxes[0], instr_boxes[0]),
         )
-        self.wait(0.4)
+        self.wait(2)
 
 # -----------------------------------------------------------------------------
 # 5. Worked example — pow
@@ -636,6 +637,76 @@ class PowExample(Scene):
         # visually seamless when build_video.sh concatenates them.
         head = section_title("Stage 1: symbolic execution")
         self.add(head)
+
+        # ------------------------------------------------------------------
+        # Quick primer: what does it mean to "track shapes"?
+        # ------------------------------------------------------------------
+        # Each value carries a static "shape" describing what we know about
+        # it at compile time.  Anything still unknown at stage 1 is tagged
+        # `dynamic`: it won't be resolved until stage 2 (runtime).
+        def shape_pill(label, color, font_size=20):
+            t = Text(label, font="Menlo", font_size=font_size, color=BLACK)
+            box = SurroundingRectangle(
+                t, buff=0.12, corner_radius=0.10, color=color,
+            ).set_fill(color, opacity=0.9)
+            return VGroup(box, t)
+
+        primer_sub = Text(
+            "Each value gets a shape, i.e., what we know about it at stage 1. We track them in a shape context.",
+            font_size=22, color=GREY_B,
+        ).next_to(head, DOWN, buff=0.35)
+
+        primer_rows = VGroup(
+            VGroup(
+                Text("3", font="Menlo", font_size=24),
+                Text("→", font_size=24),
+                shape_pill("Lit 3", GREEN_C),
+            ),
+            VGroup(
+                Text('"hi"', font="Menlo", font_size=24),
+                Text("→", font_size=24),
+                shape_pill('Lit "hi"', GREEN_C),
+            ),
+            VGroup(
+                Text("x   (function parameter)", font="Menlo", font_size=24),
+                Text("→", font_size=24),
+                shape_pill("dynamic", GREY),
+            ),
+            VGroup(
+                Text("new B1(2)", font="Menlo", font_size=24),
+                Text("→", font_size=24),
+                shape_pill("B1(Lit 2)", BLUE_C),
+            ),
+        )
+        for row in primer_rows:
+            row.arrange(RIGHT, buff=0.4)
+            # Vertically center every cell on the row's middle so the
+            # pill's box doesn't pull the baseline of the plain text down.
+            cy = row.get_center()[1]
+            for cell in row:
+                cell.move_to([cell.get_center()[0], cy, 0])
+        primer_rows.arrange(DOWN, aligned_edge=LEFT, buff=0.28)
+        primer_rows.next_to(primer_sub, DOWN, buff=0.5).shift(LEFT * 1.0)
+
+        dynamic_note = VGroup(
+            shape_pill("dynamic", GREY, font_size=18),
+            Text(
+                "= unknown at stage 1, only resolved at stage 2",
+                font_size=20, color=GREY_B,
+            ),
+        ).arrange(RIGHT, buff=0.25)
+        dynamic_note.next_to(primer_rows, DOWN, buff=0.5)
+
+        self.play(FadeIn(primer_sub))
+        for row in primer_rows:
+            self.play(FadeIn(row[0]), run_time=0.18)
+            self.play(
+                FadeIn(row[1]), FadeIn(row[2], shift=RIGHT * 0.15),
+                run_time=0.28,
+            )
+        self.play(FadeIn(dynamic_note))
+        self.wait(2.0)
+        self.play(FadeOut(VGroup(primer_sub, primer_rows, dynamic_note)))
 
         # Lay out CODE  +  SPECIALIZED FUNCTIONS  +  SHAPE CONTEXT
         body_src = """staged module M with
@@ -745,7 +816,7 @@ M.cube(5)"""
         self.play(Write(code), FadeIn(status), run_time=1.8)
 
         legend = Text(
-            "Dyn = unknown until runtime",
+            "Dyn = unknown until stage 2",
             font_size=16,
             color=GREY_B,
             slant=ITALIC,
@@ -1000,7 +1071,7 @@ M.cube(5)"""
 
         # (5): now that nothing references pow0-pow3, drop them.
         elim_msg = Text(
-            "pow0 to pow3 are unreachable  \u21d2  drop them.",
+            "pow0 to pow3 are unreachable  \u2192  drop them.",
             font_size=22, color=RED_C, weight=BOLD,
         ).to_edge(DOWN, buff=0.4)
         self.play(FadeTransform(inline_msg, elim_msg), run_time=0.7)
@@ -1081,234 +1152,234 @@ M.cube(5)"""
 # -----------------------------------------------------------------------------
 
 
-class ShapeProp(Scene):
-    """Intuitive walk-through of how the compiler tracks 'shapes' and uses
-    them to peel away dead branches at stage 1, ending with a pointer to the
-    web demo."""
+# class ShapeProp(Scene):
+#     """Intuitive walk-through of how the compiler tracks 'shapes' and uses
+#     them to peel away dead branches at stage 1, ending with a pointer to the
+#     web demo."""
 
-    def construct(self):
-        def shape_pill(label, color, font_size=22):
-            t = Text(label, font_size=font_size, color=BLACK)
-            box = SurroundingRectangle(
-                t, buff=0.12, corner_radius=0.12, color=color
-            ).set_fill(color, opacity=0.9)
-            return VGroup(box, t)
+#     def construct(self):
+#         def shape_pill(label, color, font_size=22):
+#             t = Text(label, font_size=font_size, color=BLACK)
+#             box = SurroundingRectangle(
+#                 t, buff=0.12, corner_radius=0.12, color=color
+#             ).set_fill(color, opacity=0.9)
+#             return VGroup(box, t)
 
-        head = section_title("How does the compiler know what to peel?")
-        self.play(FadeIn(head))
+#         head = section_title("How does the compiler know what to peel?")
+#         self.play(FadeIn(head))
 
-        # Part 1 — what is a "shape"? A tiny static fact about a value.
-        sub1 = Text(
-            "Idea: tag every value with a shape",
-            font_size=24,
-            color=GREY_B,
-        ).next_to(head, DOWN, buff=0.2)
-        self.play(FadeIn(sub1))
+#         # Part 1 — what is a "shape"? A tiny static fact about a value.
+#         sub1 = Text(
+#             "Idea: tag every value with a shape",
+#             font_size=24,
+#             color=GREY_B,
+#         ).next_to(head, DOWN, buff=0.2)
+#         self.play(FadeIn(sub1))
 
-        examples = VGroup(
-            VGroup(Text("3", font_size=28), Text("→", font_size=28),
-                   shape_pill("Lit 3", GREEN_C)),
-            VGroup(Text('"hi"', font_size=28), Text("→", font_size=28),
-                   shape_pill('Lit "hi"', GREEN_C)),
-            VGroup(Text("x  (parameter)", font_size=28), Text("→", font_size=28),
-                   shape_pill("Dyn", GREY)),
-            VGroup(Text("new B1(2)", font_size=28), Text("→", font_size=28),
-                   shape_pill("B1(Lit 2)", BLUE_C)),
-            VGroup(Text("if b then B1(2) else B2(3)", font_size=28),
-                   Text("→", font_size=28),
-                   shape_pill("B1(Lit 2) ∪ B2(Lit 3)", PURPLE_B)),
-        )
-        for row in examples:
-            row.arrange(RIGHT, buff=0.4, aligned_edge=DOWN)
-        examples.arrange(DOWN, aligned_edge=LEFT, buff=0.3).next_to(
-            sub1, DOWN, buff=0.5
-        ).shift(LEFT * 0.4)
+#         examples = VGroup(
+#             VGroup(Text("3", font_size=28), Text("→", font_size=28),
+#                    shape_pill("Lit 3", GREEN_C)),
+#             VGroup(Text('"hi"', font_size=28), Text("→", font_size=28),
+#                    shape_pill('Lit "hi"', GREEN_C)),
+#             VGroup(Text("x  (parameter)", font_size=28), Text("→", font_size=28),
+#                    shape_pill("Dyn", GREY)),
+#             VGroup(Text("new B1(2)", font_size=28), Text("→", font_size=28),
+#                    shape_pill("B1(Lit 2)", BLUE_C)),
+#             VGroup(Text("if b then B1(2) else B2(3)", font_size=28),
+#                    Text("→", font_size=28),
+#                    shape_pill("B1(Lit 2) ∪ B2(Lit 3)", PURPLE_B)),
+#         )
+#         for row in examples:
+#             row.arrange(RIGHT, buff=0.4, aligned_edge=DOWN)
+#         examples.arrange(DOWN, aligned_edge=LEFT, buff=0.3).next_to(
+#             sub1, DOWN, buff=0.5
+#         ).shift(LEFT * 0.4)
 
-        legend = VGroup(
-            VGroup(shape_pill("•", GREEN_C, font_size=18),
-                   Text("known statically", font_size=18, color=GREEN_D)),
-            VGroup(shape_pill("•", GREY, font_size=18),
-                   Text("unknown until runtime", font_size=18, color=GREY_B)),
-            VGroup(shape_pill("•", PURPLE_B, font_size=18),
-                   Text("disjunction (our novelty)", font_size=18, color=PURPLE_B)),
-        )
-        for row in legend:
-            row.arrange(RIGHT, buff=0.2)
-        legend.arrange(DOWN, aligned_edge=LEFT, buff=0.18)
-        legend.to_edge(RIGHT, buff=0.4).align_to(examples, UP)
+#         legend = VGroup(
+#             VGroup(shape_pill("•", GREEN_C, font_size=18),
+#                    Text("known statically", font_size=18, color=GREEN_D)),
+#             VGroup(shape_pill("•", GREY, font_size=18),
+#                    Text("unknown until runtime", font_size=18, color=GREY_B)),
+#             VGroup(shape_pill("•", PURPLE_B, font_size=18),
+#                    Text("disjunction (our novelty)", font_size=18, color=PURPLE_B)),
+#         )
+#         for row in legend:
+#             row.arrange(RIGHT, buff=0.2)
+#         legend.arrange(DOWN, aligned_edge=LEFT, buff=0.18)
+#         legend.to_edge(RIGHT, buff=0.4).align_to(examples, UP)
 
-        for row in examples:
-            self.play(FadeIn(row[0]), run_time=0.2)
-            self.play(FadeIn(row[1]), FadeIn(row[2], shift=RIGHT * 0.15), run_time=0.3)
-        self.play(FadeIn(legend))
-        self.wait(2.5)
-        self.play(FadeOut(VGroup(examples, legend, sub1)))
+#         for row in examples:
+#             self.play(FadeIn(row[0]), run_time=0.2)
+#             self.play(FadeIn(row[1]), FadeIn(row[2], shift=RIGHT * 0.15), run_time=0.3)
+#         self.play(FadeIn(legend))
+#         self.wait(2.5)
+#         self.play(FadeOut(VGroup(examples, legend, sub1)))
 
-        # Part 2 — shapes propagate. Walk through cube(x) = pow(x, 3).
-        sub2 = Text(
-            "Shapes propagate through calls — and prune dead branches.",
-            font_size=24,
-            color=GREY_B,
-        ).next_to(head, DOWN, buff=0.2)
-        self.play(FadeIn(sub2))
+#         # Part 2 — shapes propagate. Walk through cube(x) = pow(x, 3).
+#         sub2 = Text(
+#             "Shapes propagate through calls — and prune dead branches.",
+#             font_size=24,
+#             color=GREY_B,
+#         ).next_to(head, DOWN, buff=0.2)
+#         self.play(FadeIn(sub2))
 
-        code = mls(
-            """fun cube(x) = pow(x, 3)
+#         code = mls(
+#             """fun cube(x) = pow(x, 3)
 
-fun pow(n, x) = if n is
-  0 then 1
-  else x * pow(n - 1, x)"""
-        ).scale(0.85)
-        code.next_to(sub2, DOWN, buff=0.4).to_edge(LEFT, buff=0.7)
-        self.play(Write(code))
+# fun pow(n, x) = if n is
+#   0 then 1
+#   else x * pow(n - 1, x)"""
+#         ).scale(0.85)
+#         code.next_to(sub2, DOWN, buff=0.4).to_edge(LEFT, buff=0.7)
+#         self.play(Write(code))
 
-        # Side panel that shows the running shape environment.
-        ctx_title = Text("shape context", font_size=18, weight=BOLD, color=YELLOW_E)
-        ctx_lines = VGroup()  # filled in dynamically
-        # Reserve space for the widest line we will eventually add so the
-        # frame is sized correctly up-front.
-        widest = Text(
-            "pow:    n = Lit 3,  x = Lit 5",
-            font="Menlo", font_size=15, color=GREY_B,
-        )
-        ctx_inner = VGroup(ctx_title, widest).arrange(
-            DOWN, aligned_edge=LEFT, buff=0.18
-        )
-        ctx_frame = SurroundingRectangle(
-            ctx_inner, color=YELLOW_E, buff=0.25, corner_radius=0.1
-        )
-        ctx_frame.stretch_to_fit_height(4.2).align_to(ctx_inner, UP).shift(UP * 0.1)
-        # Don't actually render the placeholder.
-        ctx_inner.remove(widest)
-        ctx_grp = VGroup(ctx_frame, ctx_inner)
-        ctx_grp.to_edge(RIGHT, buff=0.5).align_to(code, UP)
-        ctx_lines.next_to(ctx_title, DOWN, aligned_edge=LEFT, buff=0.18)
+#         # Side panel that shows the running shape environment.
+#         ctx_title = Text("shape context", font_size=18, weight=BOLD, color=YELLOW_E)
+#         ctx_lines = VGroup()  # filled in dynamically
+#         # Reserve space for the widest line we will eventually add so the
+#         # frame is sized correctly up-front.
+#         widest = Text(
+#             "pow:    n = Lit 3,  x = Lit 5",
+#             font="Menlo", font_size=15, color=GREY_B,
+#         )
+#         ctx_inner = VGroup(ctx_title, widest).arrange(
+#             DOWN, aligned_edge=LEFT, buff=0.18
+#         )
+#         ctx_frame = SurroundingRectangle(
+#             ctx_inner, color=YELLOW_E, buff=0.25, corner_radius=0.1
+#         )
+#         ctx_frame.stretch_to_fit_height(4.2).align_to(ctx_inner, UP).shift(UP * 0.1)
+#         # Don't actually render the placeholder.
+#         ctx_inner.remove(widest)
+#         ctx_grp = VGroup(ctx_frame, ctx_inner)
+#         ctx_grp.to_edge(RIGHT, buff=0.5).align_to(code, UP)
+#         ctx_lines.next_to(ctx_title, DOWN, aligned_edge=LEFT, buff=0.18)
 
-        self.play(Create(ctx_frame), FadeIn(ctx_title))
+#         self.play(Create(ctx_frame), FadeIn(ctx_title))
 
-        def add_ctx(text_str, color=GREY_B):
-            line = Text(text_str, font="Menlo", font_size=15, color=color)
-            if len(ctx_lines) == 0:
-                line.next_to(ctx_title, DOWN, aligned_edge=LEFT, buff=0.18)
-            else:
-                line.next_to(ctx_lines[-1], DOWN, aligned_edge=LEFT, buff=0.1)
-            ctx_lines.add(line)
-            self.play(FadeIn(line, shift=RIGHT * 0.1), run_time=0.4)
-            return line
+#         def add_ctx(text_str, color=GREY_B):
+#             line = Text(text_str, font="Menlo", font_size=15, color=color)
+#             if len(ctx_lines) == 0:
+#                 line.next_to(ctx_title, DOWN, aligned_edge=LEFT, buff=0.18)
+#             else:
+#                 line.next_to(ctx_lines[-1], DOWN, aligned_edge=LEFT, buff=0.1)
+#             ctx_lines.add(line)
+#             self.play(FadeIn(line, shift=RIGHT * 0.1), run_time=0.4)
+#             return line
 
-        # Step 1: caller is M.cube(5). 
-        narr1 = Text(
-            "Step 1: the call M.cube(5) tells stage 1 that x is Lit 5.",
-            font_size=20, color=GREY_B,
-        ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
-        self.play(FadeIn(narr1))
-        # Highlight cube body
-        cube_box = SurroundingRectangle(code.code_lines[0], color=YELLOW_E, buff=0.05)
-        self.play(Create(cube_box))
-        add_ctx("cube:  x = Lit 5", GREEN_D)
-        self.wait(1.0)
+#         # Step 1: caller is M.cube(5). 
+#         narr1 = Text(
+#             "Step 1: the call M.cube(5) tells stage 1 that x is Lit 5.",
+#             font_size=20, color=GREY_B,
+#         ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
+#         self.play(FadeIn(narr1))
+#         # Highlight cube body
+#         cube_box = SurroundingRectangle(code.code_lines[0], color=YELLOW_E, buff=0.05)
+#         self.play(Create(cube_box))
+#         add_ctx("cube:  x = Lit 5", GREEN_D)
+#         self.wait(1.0)
 
-        # Step 2: enter pow with n = Lit 3, x = Lit 5
-        narr2 = Text(
-            "Step 2: cube(x) calls pow(x, 3), so in pow we know n : Lit 3, x : Lit 5.",
-            font_size=20, color=GREY_B,
-        ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
-        self.play(FadeOut(cube_box), FadeTransform(narr1, narr2))
-        pow_call_box = SurroundingRectangle(code.code_lines[0][14:22], color=YELLOW_E, buff=0.05)
-        self.play(Create(pow_call_box))
-        add_ctx("pow:   n = Lit 3,  x = Lit 5", GREEN_D)
-        self.wait(1.0)
+#         # Step 2: enter pow with n = Lit 3, x = Lit 5
+#         narr2 = Text(
+#             "Step 2: cube(x) calls pow(x, 3), so in pow we know n : Lit 3, x : Lit 5.",
+#             font_size=20, color=GREY_B,
+#         ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
+#         self.play(FadeOut(cube_box), FadeTransform(narr1, narr2))
+#         pow_call_box = SurroundingRectangle(code.code_lines[0][14:22], color=YELLOW_E, buff=0.05)
+#         self.play(Create(pow_call_box))
+#         add_ctx("pow:   n = Lit 3,  x = Lit 5", GREEN_D)
+#         self.wait(1.0)
 
-        # Step 3: dead-branch elimination on `n is 0`.
-        narr3 = Text(
-            "Step 3: n is statically Lit 3, not 0.  The 'then 1' branch is dead.",
-            font_size=20, color=GREY_B,
-        ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
-        self.play(FadeOut(pow_call_box), FadeTransform(narr2, narr3))
-        dead_box = SurroundingRectangle(code.code_lines[3], color=RED, buff=0.05)
-        cross = Cross(dead_box, color=RED, stroke_width=4)
-        self.play(Create(dead_box))
-        self.play(Create(cross))
-        self.wait(1.5)
+#         # Step 3: dead-branch elimination on `n is 0`.
+#         narr3 = Text(
+#             "Step 3: n is statically Lit 3, not 0.  The 'then 1' branch is dead.",
+#             font_size=20, color=GREY_B,
+#         ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
+#         self.play(FadeOut(pow_call_box), FadeTransform(narr2, narr3))
+#         dead_box = SurroundingRectangle(code.code_lines[3], color=RED, buff=0.05)
+#         cross = Cross(dead_box, color=RED, stroke_width=4)
+#         self.play(Create(dead_box))
+#         self.play(Create(cross))
+#         self.wait(1.5)
 
-        # tep 4: take the live branch, decrement n.
-        narr4 = Text(
-            "Step 4: take the live branch.  n shrinks: Lit 3 → Lit 2 → Lit 1 → Lit 0.",
-            font_size=20, color=GREY_B,
-        ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
-        live_box = SurroundingRectangle(code.code_lines[4], color=GREEN, buff=0.05)
-        self.play(FadeTransform(narr3, narr4), Create(live_box))
-        add_ctx("recurse: n = Lit 2", BLUE_C)
-        add_ctx("recurse: n = Lit 1", BLUE_C)
-        add_ctx("recurse: n = Lit 0", BLUE_C)
-        self.wait(0.6)
+#         # tep 4: take the live branch, decrement n.
+#         narr4 = Text(
+#             "Step 4: take the live branch.  n shrinks: Lit 3 → Lit 2 → Lit 1 → Lit 0.",
+#             font_size=20, color=GREY_B,
+#         ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
+#         live_box = SurroundingRectangle(code.code_lines[4], color=GREEN, buff=0.05)
+#         self.play(FadeTransform(narr3, narr4), Create(live_box))
+#         add_ctx("recurse: n = Lit 2", BLUE_C)
+#         add_ctx("recurse: n = Lit 1", BLUE_C)
+#         add_ctx("recurse: n = Lit 0", BLUE_C)
+#         self.wait(0.6)
 
-        # Step 5: base case fires, recursion terminates.
-        narr5 = Text(
-            "Step 5: when n : Lit 0, the base case fires — the 'else' branch is now dead.",
-            font_size=20, color=GREY_B,
-        ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
-        self.play(FadeTransform(narr4, narr5))
-        # Flip which branch is live/dead for n=0.
-        self.play(
-            FadeOut(dead_box), FadeOut(cross), FadeOut(live_box),
-        )
-        live2 = SurroundingRectangle(code.code_lines[3], color=GREEN, buff=0.05)
-        dead2 = SurroundingRectangle(code.code_lines[4], color=RED, buff=0.05)
-        cross2 = Cross(dead2, color=RED, stroke_width=4)
-        self.play(Create(live2), Create(dead2), Create(cross2))
-        add_ctx("base:    return Lit 1", GREEN_D)
-        self.wait(1.5)
+#         # Step 5: base case fires, recursion terminates.
+#         narr5 = Text(
+#             "Step 5: when n : Lit 0, the base case fires — the 'else' branch is now dead.",
+#             font_size=20, color=GREY_B,
+#         ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
+#         self.play(FadeTransform(narr4, narr5))
+#         # Flip which branch is live/dead for n=0.
+#         self.play(
+#             FadeOut(dead_box), FadeOut(cross), FadeOut(live_box),
+#         )
+#         live2 = SurroundingRectangle(code.code_lines[3], color=GREEN, buff=0.05)
+#         dead2 = SurroundingRectangle(code.code_lines[4], color=RED, buff=0.05)
+#         cross2 = Cross(dead2, color=RED, stroke_width=4)
+#         self.play(Create(live2), Create(dead2), Create(cross2))
+#         add_ctx("base:    return Lit 1", GREEN_D)
+#         self.wait(1.5)
 
-        # Step 6: residual code is x*x*x*1, with no recursion left.
-        narr6 = Text(
-            "Step 6: every recursive call was peeled away — the residual is straight-line code.",
-            font_size=20, color=YELLOW_E,
-        ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
-        self.play(FadeTransform(narr5, narr6))
+#         # Step 6: residual code is x*x*x*1, with no recursion left.
+#         narr6 = Text(
+#             "Step 6: every recursive call was peeled away — the residual is straight-line code.",
+#             font_size=20, color=YELLOW_E,
+#         ).next_to(code, DOWN, buff=0.35).align_to(code, LEFT)
+#         self.play(FadeTransform(narr5, narr6))
 
-        residual = mls("fun cube(x) = x * x * x * 1").scale(0.7)
-        residual.next_to(narr6, DOWN, buff=0.35).align_to(code, LEFT)
-        residual_arrow = Arrow(
-            code.get_bottom() + DOWN * 0.05,
-            residual.get_top() + UP * 0.05,
-            color=GREEN_D, stroke_width=3, buff=0.05,
-        )
-        self.play(FadeIn(residual))
-        self.wait(2.5)
+#         residual = mls("fun cube(x) = x * x * x * 1").scale(0.7)
+#         residual.next_to(narr6, DOWN, buff=0.35).align_to(code, LEFT)
+#         residual_arrow = Arrow(
+#             code.get_bottom() + DOWN * 0.05,
+#             residual.get_top() + UP * 0.05,
+#             color=GREEN_D, stroke_width=3, buff=0.05,
+#         )
+#         self.play(FadeIn(residual))
+#         self.wait(2.5)
 
-        self.play(
-            FadeOut(
-                VGroup(
-                    sub2, code, ctx_grp, narr6, live2, dead2, cross2,
-                    residual,
-                )
-            )
-        )
+#         self.play(
+#             FadeOut(
+#                 VGroup(
+#                     sub2, code, ctx_grp, narr6, live2, dead2, cross2,
+#                     residual,
+#                 )
+#             )
+#         )
 
-        # Part 3 — try it yourself.  Mention the web demo.
-        demo_head = Text(
-            "Try it yourself — live in your browser.",
-            font_size=30, weight=BOLD, color=YELLOW_E,
-        ).next_to(head, DOWN, buff=0.5)
-        bullets = VGroup(
-            Text("• paste any MLscript module,  add  staged  to the front", font_size=22, color=GREY_B),
-            Text("• inspect the inferred shapes side-by-side with the residual", font_size=22, color=GREY_B),
-            Text("• step through stage-1 reduction one rule at a time", font_size=22, color=GREY_B),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.25).next_to(demo_head, DOWN, buff=0.4)
+#         # Part 3 — try it yourself.  Mention the web demo.
+#         demo_head = Text(
+#             "Try it yourself — live in your browser.",
+#             font_size=30, weight=BOLD, color=YELLOW_E,
+#         ).next_to(head, DOWN, buff=0.5)
+#         bullets = VGroup(
+#             Text("• paste any MLscript module,  add  staged  to the front", font_size=22, color=GREY_B),
+#             Text("• inspect the inferred shapes side-by-side with the residual", font_size=22, color=GREY_B),
+#             Text("• step through stage-1 reduction one rule at a time", font_size=22, color=GREY_B),
+#         ).arrange(DOWN, aligned_edge=LEFT, buff=0.25).next_to(demo_head, DOWN, buff=0.4)
 
-        url = Text(
-            "→  web demo at the end of the talk",
-            font_size=24, color=GREEN_D,
-        ).next_to(bullets, DOWN, buff=0.5)
+#         url = Text(
+#             "→  web demo at the end of the talk",
+#             font_size=24, color=GREEN_D,
+#         ).next_to(bullets, DOWN, buff=0.5)
 
-        self.play(FadeIn(demo_head))
-        for b in bullets:
-            self.play(FadeIn(b, shift=RIGHT * 0.15), run_time=0.4)
-        self.play(FadeIn(url))
-        self.wait(3.0)
+#         self.play(FadeIn(demo_head))
+#         for b in bullets:
+#             self.play(FadeIn(b, shift=RIGHT * 0.15), run_time=0.4)
+#         self.play(FadeIn(url))
+#         self.wait(3.0)
 
-        self.play(FadeOut(VGroup(head, demo_head, bullets, url)))
+#         self.play(FadeOut(VGroup(head, demo_head, bullets, url)))
 
 
 # 6. Novelty, other features of dynamic staging
@@ -1340,7 +1411,7 @@ fun use(b) = pick(b).call(5)"""
 
         shape_lbl = Text("inferred shape of pick(b):",
                          font_size=22, color=GREY_B)
-        shape = MathTex(r"B_1(2)\,\cup\,B_2(3)", font_size=44, color=YELLOW_E)
+        shape = MathTex(r"B1(2)\,\cup\,B2(3)", font_size=44, color=YELLOW_E)
         shape_grp = (
             VGroup(shape_lbl, shape)
             .arrange(DOWN, buff=0.3)
