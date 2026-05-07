@@ -551,7 +551,7 @@ class OurApproach(Scene):
         )))
 
         next_title = Text(
-            "Stage 1: symbolic execution", weight=BOLD, font_size=42,
+            "Stage 1: instrumentation", weight=BOLD, font_size=42,
         ).to_edge(UP)
         self.play(
             FadeTransform(VGroup(ds["arr1"], ds["arr1_lbl"]), next_title),
@@ -559,6 +559,69 @@ class OurApproach(Scene):
         )
         self.wait(0.4)
 
+class Instrumentation(Scene):
+    def construct(self):
+        head = section_title("Stage 1: instrumentation")
+        self.add(head)
+
+        ds_src_text = """staged module M with
+  fun pow(n, x) = if n is
+    0 then 1
+    else x * pow(n - 1, x)
+  fun cube(x) = pow(x, 3)"""
+
+        ds_instr_text = """staged module M with
+  fun pow_instr() = FunDefn("pow", ["n", "x"], Match("n",
+      [[Lit(0), Return(1)]],
+      Assign("tmp", Call("-", "n", Lit(1)),
+      Assign("tmp1", Call("pow", ["tmp", "x"]),
+      Return(Call("*", ["x", "tmp1"]))))
+    ))
+  fun cube_instr() = Return(Call("pow", ["x", Lit(3)]))"""
+        src = mls(ds_src_text).scale(0.7)
+        instr = mls(ds_instr_text).scale(0.5)
+        g = VGroup(src, instr).arrange(RIGHT)
+
+        self.add(src)
+
+        desc = (
+            Text(
+                "We convert functions into a reflected representation which can be manipulated in symbolic execution."
+            )
+            .move_to(g)
+            .shift(DOWN * 2)
+        )
+        self.play(FadeIn(g, desc))
+
+        # show corresponding reflected blocks in MLscript
+        src_boxes = [
+            SurroundingRectangle(src.code_lines[1:4]),
+            SurroundingRectangle(src.code_lines[2]),
+            SurroundingRectangle(src.code_lines[3][10:13]),
+            SurroundingRectangle(src.code_lines[3][6:]),
+            SurroundingRectangle(src.code_lines[3][4:]),
+        ]
+        instr_boxes = [
+            SurroundingRectangle(instr.code_lines[1:7]),
+            SurroundingRectangle(instr.code_lines[2]),
+            SurroundingRectangle(instr.code_lines[3]),
+            SurroundingRectangle(instr.code_lines[4]),
+            SurroundingRectangle(instr.code_lines[5]),
+        ]
+
+        self.play(FadeIn(src_boxes[0], instr_boxes[0]))
+
+        for s, i in zip(src_boxes[1:], instr_boxes[1:]):
+            self.play(Transform(src_boxes[0], s), Transform(instr_boxes[0], i))
+        self.wait(0.4)
+
+        next_title = section_title("Stage 1: symbolic execution")
+        self.play(
+            FadeOut(desc, g),
+            FadeTransform(head, next_title),
+            FadeOut(src_boxes[0], instr_boxes[0]),
+        )
+        self.wait(0.4)
 
 # -----------------------------------------------------------------------------
 # 5. Worked example — pow
@@ -792,17 +855,17 @@ M.cube(5)"""
 
             # (c) Animate the dead branch crossing out, the live one glowing.
             if k > 0:
-                dead, live = then_line, else_line
+                dead, live = then_line, else_line[4:]
             else:
-                dead, live = else_line, then_line
+                dead, live = else_line, then_line[-1]
             dead_box = SurroundingRectangle(dead, color=RED, buff=0.04)
             cross = Cross(dead_box, color=RED, stroke_width=4)
             live_box = SurroundingRectangle(live, color=GREEN_D, buff=0.04)
-            self.play(Create(dead_box), Create(cross), run_time=0.85)
+            self.play(Create(dead_box), Create(cross), run_time=0.85 / (i + 1))
             self.play(
                 dead.animate.set_opacity(0.25),
                 Create(live_box),
-                run_time=0.75,
+                run_time=0.75 / (i + 1),
             )
 
             # (d) Move a copy of the live branch toward the cache row, then
@@ -813,14 +876,14 @@ M.cube(5)"""
                 live_copy.animate
                     .scale(0.55)
                     .move_to(target_body_cell.get_center()),
-                run_time=1.35,
+                run_time=1.35 / (i + 1),
             )
             sf_rows[i][0].set_opacity(1)
             target_body_cell.set_opacity(1)
             self.play(
                 FadeIn(sf_rows[i][0], shift=RIGHT * 0.15),
                 FadeTransform(live_copy, target_body_cell),
-                run_time=0.9,
+                run_time=0.9 / (i + 1),
             )
             self.wait(0.6)
 
@@ -830,7 +893,7 @@ M.cube(5)"""
                 FadeOut(cross),
                 FadeOut(live_box),
                 dead.animate.set_opacity(1.0),
-                run_time=0.55,
+                run_time=0.55 / (i + 1),
             )
 
         # Final step.  Now that all four pow-specialisations are in the
@@ -845,7 +908,7 @@ M.cube(5)"""
 
         cube_line = code.code_lines[4]
         cube_focus_box = SurroundingRectangle(
-            cube_line, color=BLUE_C, buff=0.04, stroke_width=2,
+            cube_line[11:], color=BLUE_C, buff=0.04, stroke_width=2,
         )
 
         set_status("cube(x)")
@@ -856,6 +919,12 @@ M.cube(5)"""
         cube_after_full = mls("  fun cube(x) = pow3(x)").scale(0.55)
         cube_after = cube_after_full.code_lines[0]
         cube_after.move_to(cube_line, aligned_edge=LEFT)
+        cube_after_focus_box = SurroundingRectangle(
+            cube_after[11:],
+            color=BLUE_C,
+            buff=0.04,
+            stroke_width=2,
+        )
         replaced_msg = Text(
             "pow(x, 3) is in the cache  \u2192  call pow3(x) directly.",
             font_size=20, color=BLUE_C, weight=BOLD,
@@ -863,12 +932,13 @@ M.cube(5)"""
         self.play(
             FadeTransform(cube_line, cube_after),
             FadeIn(replaced_msg),
+            ReplacementTransform(cube_focus_box, cube_after_focus_box),
             run_time=1.1,
         )
         # Hide the original cube_line so the final FadeOut(code) does not
         # briefly redraw the now-stale  fun cube(x) = pow(x, 3)  line.
         cube_line.set_opacity(0)
-        self.remove(cube_line)
+        self.remove(cube_line, cube_after_focus_box)
         self.wait(1.4)
 
         # (2): add cube as a new cache row
@@ -995,7 +1065,7 @@ M.cube(5)"""
 
         self.play(
             FadeOut(VGroup(
-                head, status, status_ref["call"], code, cube_inlined,
+                head, status_label, status_ref["call"], code, cube_inlined,
                 legend,
                 sf_grp, sc_grp, *sc_rows_visible, call_msg,
                 sf_rows[4][0], new_cube_body,
@@ -1782,6 +1852,23 @@ class Closing(Scene):
 
 
 # -----------------------------------------------------------------------------
+# 9. Bibliography
+# -----------------------------------------------------------------------------
+
+
+class Bibliography(Scene):
+    def construct(self):
+        self.add(
+            Tex(
+                r"""\raggedright{Walid Taha. A gentle introduction to multi-stage programming. In \textit{Domain-Specific Program Generation: International Seminar, Dagstuhl Castle, Germany, March 23-28, 2003. Revised Papers}, pages 30–50. Springer, 2004.}
+            \\ \vspace{1em}
+            \raggedright{A. Shali and W. R. Cook, “Hybrid partial evaluation,” in \textit{Proceedings of the 2011 ACM international conference on Object oriented programming systems languages and applications}, 2011, pp. 375–390.}"""
+            ).scale(0.6)
+        )
+        self.wait(1.0)
+
+
+# -----------------------------------------------------------------------------
 # Master scene — concatenates every segment into one ~3 minute video.
 # -----------------------------------------------------------------------------
 
@@ -1793,11 +1880,13 @@ class FinalVideo(ThreeDScene):
             Motivation,
             MSPApproach,
             OurApproach,
+            Instrumentation,
             PowExample,
             Novelty,
             MVPDemo,
             Benchmarks,
             Closing,
+            Bibliography,
         ):
             cls.construct(self)
             self.clear()

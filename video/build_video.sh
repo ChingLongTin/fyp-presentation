@@ -23,11 +23,13 @@ SCENES=(
     Motivation
     MSPApproach
     OurApproach
+    Instrumentation
     PowExample
     Novelty
     MVPDemo
     Benchmarks
     Closing
+    Bibliography
 )
 
 echo "=== Assembling scenes from $RESOLUTION_DIR ==="
