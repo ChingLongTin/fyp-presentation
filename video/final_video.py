@@ -1637,8 +1637,8 @@ class MVPDemo(ThreeDScene):
         )
         cam.move_to(axes.c2p(0, 0, 3))
         cam_lbl = Text("camera", font_size=16, color=YELLOW_E)
-        self.add_fixed_in_frame_mobjects(cam_lbl)
-        cam_lbl.to_corner(UR).shift(DOWN * 1.0)
+        cam_lbl.next_to(cam, UP, buff=0.15)
+        self.add_fixed_orientation_mobjects(cam_lbl)
         self.play(FadeIn(cam), FadeIn(cam_lbl))
         self.wait(0.3)
 
